@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lastrag"
+version = "2.0.0"
+description = "LastRAG v2 — Núcleo genérico de Hybrid Knowledge Retrieval con citación trazable"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+
+dependencies = [
+    # LangGraph (orquestación del motor RAG)
+    "langgraph>=0.2.0",
+    # PyMuPDF (parser PDF fallback — siempre disponible)
+    "PyMuPDF>=1.24.0",
+    # python-dotenv (carga de .env)
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+# Backend cloud (Gemini File Search + LLM)
+gemini = [
+    "google-genai>=1.0.0",
+]
+# Backend local (Qdrant + embeddings locales)
+qdrant = [
+    "qdrant-client>=1.10.0",
+    "sentence-transformers>=3.0.0",
+]
+# LastIndex (árbol documental en Neo4j)
+neo4j = [
+    "neo4j>=5.20.0",
+]
+# Parser primario (Docling — opcional, PyMuPDF es fallback)
+docling = [
+    "docling>=2.0.0",
+]
+# Desarrollo y testing
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23.0",
+]
+# Todo junto
+all = [
+    "lastrag[gemini,qdrant,neo4j,docling,dev]",
+]
+
+[tool.setuptools.packages.find]
+include = ["core*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

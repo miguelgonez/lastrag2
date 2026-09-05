@@ -1,0 +1,6 @@
+{
+  "name": "NotebookLM",
+  "description": "A personalized AI collaborator that helps you synthesize, explore, and ground insights from your documents, featuring an AI chat with source citations, document viewer, Keep-style notes, and automated study guides with simulated audio podcasts.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

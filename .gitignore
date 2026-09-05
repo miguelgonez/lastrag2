@@ -1,0 +1,21 @@
+# Entorno virtual
+.venv/
+__pycache__/
+*.pyc
+
+# Secretos
+.env
+
+# Build
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+node_modules/
