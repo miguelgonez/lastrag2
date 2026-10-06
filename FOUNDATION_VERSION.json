@@ -1,0 +1,42 @@
+{
+  "name": "lastrag-foundation",
+  "display_name": "LastRAG 2.0 Foundation",
+  "version": "2.0.0",
+  "version_note": "release definitivo: commit limpio 22519f48 (12 ficheros P0.5 commiteados), tree hash git reproducible, suite 26/26 verificada desde checkout limpio (/tmp/lastrag_release_test, 2026-10-06)",
+  "contract_version": "1.0",
+  "date": "2026-10-06",
+  "canon": "OMEGA-MR2-LASTRAG-FOUNDATION-CANON v1.2.0 (congelado vigente; ~/ZCodeProject/omega_architecture_canon/LASTRAG_FOUNDATION_CANON.md)",
+  "role": "Componente horizontal reutilizable y forkable de OMEGA-MR2. NO es una solucion clinica.",
+  "public_contract": [
+    "VectorBackend / EvidenceChunk / RetrievalResult(degraded_reason) / health()",
+    "block_id -> Citation (LastIndex)",
+    "LLMClient / LocalLLM fail-closed OpenAI-compatible",
+    "Router (single-pass Hermes; iterativo = contract v2)",
+    "Embedder inyectable etiquetado (embedding_model en payload)",
+    "Contrato de degradacion: todo fallback declarado, jamas silencioso"
+  ],
+  "state_pin": {
+    "release_commit": "22519f48122e2e6fc306d2e798d13849ff4000cb",
+    "git_tree_sha1": "3182506b1b10569aaba067b3a0607c6c853d1f2d",
+    "git_tree_note": "git rev-parse HEAD^{tree} del release commit: hash reproducible del arbol exacto",
+    "predecessor_candidate": {
+      "git_commit": "9a45e086e5784bdae3168de3f8a06b5cb2bb5a7e",
+      "dirty_files": 12,
+      "ad_hoc_tree_sha256": "636d8f23337510e81a746f8520aa328e6d315919caf84b008137f25328d1d2e8"
+    },
+    "clean_checkout_verification": "clone a /tmp + suite 26/26 (2026-10-06)"
+  },
+  "verification": {
+    "suite": "26/26 pass",
+    "executed": [
+      "2026-10-06 (dos corridas)"
+    ],
+    "not_accredited": [
+      "FOUNDATION-T3 (E2E soberano con endpoint LLM real + Neo4j)",
+      "embedder semantico (HashingEmbedder es dev)"
+    ]
+  },
+  "consumers_declared": [
+    "omega-sovereign-evidence (dependencia logica; integracion fisica pendiente I1)"
+  ]
+}
