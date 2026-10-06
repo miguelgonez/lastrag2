@@ -1,0 +1,112 @@
+# ROADMAP — LastRAG 2 Foundation (reorientación 6-oct-2026)
+
+Decisión del PI tras la auditoría del 6 de octubre de 2026: la arquitectura de LastRAG 2
+sigue siendo el destino correcto; lo erróneo era asumir que el punto de partida estaba
+maduro. Este documento congela el orden de ejecución corregido. Procedencia: auditoría
+verificada sobre código (smoke 4/4 solo con dobles; `LocalLLM` stub; sin integración real
+Qdrant/Neo4j; sin benchmark; desarrollo congelado desde 12-jun-2026).
+
+## Tres capas, no confundibles
+
+| Capa | Qué es | Estado |
+|---|---|---|
+| **A. LastRAG-MD stable-v1.0** | Baseline histórico validado (Spark, 12-jun-2026) | Referencia de medición |
+| **B. Py_LastRAG_Index actual** | Prototype / core-contract v2. **No es producto.** | Pre-alpha foundation |
+| **C. LastRAG 2.0 futuro** | Evolución del v2 sólo tras E2E real + benchmark | No iniciado |
+
+Regla: «arquitectura diseñada» ≠ «sistema validado». Nada de la capa C arranca hasta
+superar el gate de la capa B.
+
+## P0 — terminal corregido
+
+El P0 anterior apuntaba a `P0-T3 BASELINE_FROZEN`. El terminal real es **`P0-T1
+PARTIAL_BASELINE`** porque: LocalLLM no funciona, no hay integración real Qdrant/Neo4j,
+no hay benchmark, Neo4j no está en el camino end-to-end, no hay despliegue soberano
+demostrado y el único test real era smoke con mocks.
+
+**P1 (Router y features de vanguardia) NO arranca.**
+
+## P0.5 — SOVEREIGN E2E FOUNDATION (obligatoria)
+
+### Objetivo 1 — LocalLLM real
+Cliente OpenAI-compatible (vLLM / endpoint local): timeout, retries limitados con
+backoff, streaming opcional, health check, model metadata, **fail-closed** (sin
+fallback silencioso a otro modelo o a texto vacío). Intercambiable
+MedGemma/Qwen/ALIA por configuración sin tocar el resto del stack.
+
+### Objetivo 2 — Integración Qdrant real (sin mocks)
+Ingestión, embeddings, búsqueda, filtros, top-k, metadatos, latencia, fallo del
+servicio, reconexión.
+
+### Objetivo 3 — Integración Neo4j real
+`Document → Section → EvidenceBlock → Citation` realmente persistido y consultado.
+El modo graph **no cae silenciosamente a hybrid**: si Neo4j no está disponible, se
+declara como degradación explícita en la respuesta.
+
+### Objetivo 4 — E2E real
+`Query → Router → Retriever real → LastIndex/Neo4j/Qdrant → Evidence Pack →
+LocalLLM → Answer + Citation`, sin mocks.
+
+## Gate — FOUNDATION-T3 = REAL_E2E_PASS
+
+| # | Control | Estado 6-oct-2026 |
+|---|---|---|
+| 1 | Qdrant real PASS | **PASS (modo local persistente, embedder desarrollo declarado)** |
+| 2 | Neo4j real PASS | **UNKNOWN — sin servidor hoy; test listo, se ejecuta con `LASTRAG_TEST_NEO4J_URI`** |
+| 3 | LocalLLM real PASS | **Código implementado; UNKNOWN contra endpoint real (no hay vLLM/Ollama/LM Studio activos hoy)** |
+| 4 | FastAPI PASS | Import OK; HTTP real pendiente |
+| 5 | Evidence Pack PASS | Salida con evidence+citations+degradations |
+| 6 | Citation provenance PASS | Parcial (block_id real de Qdrant; resolución Neo4j pendiente control 2) |
+| 7 | PHI/local path PASS | Gate PHI existente; path Qdrant local ejercitado |
+| 8 | Cold-start PASS | PASS (reinicio de cliente sobre almacenamiento persistente) |
+| 9 | Restart persistence PASS | PASS (Qdrant modo local) |
+
+**Regla de oro: no puede haber fallback silencioso.** Si graph falla y usa hybrid,
+queda registrado como DEGRADACIÓN en la respuesta, no como PASS. El motor expone
+`route_effective` + `degradations[]` en cada run.
+
+## Olas (orden congelado)
+
+- **Wave 0 — Recover & stabilize**: LocalLLM + Qdrant real + Neo4j real + persistencia + E2E (este documento).
+- **Wave 1 — Benchmark baseline**: stable-v1.0 vs v2-foundation (vector-only / index-only / graph-only / hybrid / triple; latency, recall, citation support, unsupported claims, abstention, medical-evidence completeness). Dirá si el núcleo v2 mejora algo o es una reimplementación incompleta.
+- **Wave 2 — Retrieval intelligence**: router + decomposición + iterative retrieval + reranker.
+- **Wave 3 — Evidence intelligence**: Evidence Pack 2 + conflict + temporal.
+- **Wave 4 — Multimodal.**
+- **Wave 5 — Causal Evidence Layer.**
+- **Wave 6 — Agentic orchestration.**
+
+## Naming
+
+Hasta superar REAL_E2E_PASS, el sistema se nombra **«LastRAG 2 Foundation / pre-alpha»**.
+No se llama «LastRAG 2» a nivel de producto.
+
+## Estado de ejecución Wave 0 (6-oct-2026, verificado)
+
+Suite completa: **26/26 PASS** (`python -m pytest tests/`): 4 smoke (contratos,
+dobles) + 9 cliente LocalLLM (contra servidor HTTP real en proceso) + 4 Qdrant
+real (motor local persistente) + 5 registro de degradaciones + 3 E2E soberano.
+
+- `LocalLLM` real implementado (httpx): OpenAI-compatible, timeout, retries
+  limitados con backoff (429/5xx/transporte; 4xx no se reintenta), streaming
+  SSE agregado, `health()`, `model_metadata()`, fail-closed (`LocalLLMError`;
+  el motor NO captura: sin LLM no hay respuesta). **UNKNOWN contra endpoint de
+  modelo real** (no hay vLLM/Ollama/LM Studio activos hoy).
+- `QdrantBackend`: modo local persistente (`path=`), etiqueta
+  `embedding_model` en cada punto, `health()`, errores en `degraded_reason`.
+  API migrada a `query_points` (qdrant-client actual eliminó `search`).
+  **PASS real**: ingesta, búsqueda, filtros, top-k, latencia implícita,
+  reinicio/cold-start con persistencia, fallo declarado.
+- Motor sin fallback silencioso: `route_effective` + `degradations[]` en cada
+  run (graph→hybrid declarado con from/to; backend caído; Neo4j inalcanzable
+  → citas sin resolver declaradas).
+- E2E soberano (test real): parser PyMuPDF real (Docling no instalado,
+  fallback declarado) → PDF real → Qdrant real → router → degradaciones
+  declaradas → **fail-closed** al no existir endpoint LLM. Con
+  `LASTRAG_E2E_LLM_ENDPOINT` (+ `LASTRAG_TEST_NEO4J_URI`) la MISMA prueba
+  ejecuta la cadena completa y exige respuesta con citas (camino T3).
+- Reparado: instalación editable del venv apuntaba a ruta muerta
+  (`/Users/yeye/Documents/py/...`); reinstalada sobre la ruta real.
+
+UNKNOWN declarados (no simulados): servidor Neo4j (sin Docker/OrbStack hoy),
+endpoint de modelo real, Docling, embedder biomédico real, HTTP de FastAPI
+en transporte. El gate FOUNDATION-T3 **NO está superado**.

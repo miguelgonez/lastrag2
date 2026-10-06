@@ -61,6 +61,8 @@ def route_query(query: str) -> str:
 class RAGState(TypedDict):
     query: str
     route: str
+    route_effective: str          # ruta EJECUTADA (P0.5: graph->hybrid es visible)
+    degradations: list[dict]      # P0.5: todo fallback queda declarado, jamas silencioso
     chunks: list[EvidenceChunk]
     active_graph: list[dict]
     resurrected_nodes: list[dict]
@@ -94,34 +96,69 @@ class LastRAGEngine:
         self.app = self._build()
 
     # --- Nodos ---
+    @staticmethod
+    def _decl(state: RAGState, entry: dict) -> list[dict]:
+        """Adjunta una degradacion al estado (reemplazo completo para LangGraph)."""
+        return [*state.get("degradations", []), entry]
+
     async def _route(self, state: RAGState) -> dict:
         route = route_query(state["query"])
         print(f"🧭 [Hermes] ruta = {route}")
-        return {"route": route}
+        return {"route": route, "route_effective": route}
+
+    async def _envelope_chunks(self, state: RAGState, chunks: list[EvidenceChunk]) -> tuple[list[EvidenceChunk], list[dict]]:
+        """Enriquece citaciones via LastIndex; si Neo4j no responde, la consulta
+        continúa PERO la degradación queda declarada (citas sin resolver)."""
+        try:
+            enriched = await self.lastindex.enrich_chunks(chunks)
+            return enriched, []
+        except Exception as exc:
+            entry = {"component": "lastindex", "reason": f"NEO4J_UNREACHABLE:{type(exc).__name__}",
+                     "effect": "citations_unresolved", "fallback": "chunks_sin_cita"}
+            return chunks, self._decl(state, entry)
 
     async def _semantic(self, state: RAGState) -> dict:
         result: RetrievalResult = await self.backend.search(
             state["query"], top_k=self.top_k
         )
-        chunks = await self.lastindex.enrich_chunks(result.chunks)
+        degradations = list(state.get("degradations", []))
+        if result.degraded_reason:
+            degradations.append(
+                {"component": f"backend:{self.backend.name}",
+                 "reason": result.degraded_reason,
+                 "effect": "semantic_retrieval_failed"})
+        chunks = result.chunks
+        try:
+            chunks = await self.lastindex.enrich_chunks(chunks)
+        except Exception as exc:
+            degradations.append(
+                {"component": "lastindex",
+                 "reason": f"NEO4J_UNREACHABLE:{type(exc).__name__}",
+                 "effect": "citations_unresolved", "fallback": "chunks_sin_cita"})
         print(f"🔍 [semantic/{self.backend.name}] {len(chunks)} fragmentos")
-        return {"chunks": chunks}
+        return {"chunks": chunks, "degradations": degradations}
 
     async def _structural(self, state: RAGState) -> dict:
-        chunks = await self.lastindex.structural_search(
-            state["query"], top_k=self.top_k
-        )
+        try:
+            chunks = await self.lastindex.structural_search(
+                state["query"], top_k=self.top_k
+            )
+        except Exception as exc:
+            entry = {"component": "lastindex", "reason": f"NEO4J_UNREACHABLE:{type(exc).__name__}",
+                     "effect": "structural_retrieval_failed", "fallback": "sin_fragmentos"}
+            print(f"⚠️ [structural] degradado: {entry['reason']}")
+            return {"chunks": [], "degradations": self._decl(state, entry)}
         print(f"📑 [structural] {len(chunks)} bloques con localizacion exacta")
         return {"chunks": chunks}
 
     async def _graph_nodes(self, query: str) -> list[dict]:
         if not self.neo4j_graph:
             return []
-            
+
         stopwords = {"que", "como", "cual", "cuales", "son", "los", "las", "del", "de", "la", "el", "en", "con", "por", "para", "una", "un", "se", "es", "y", "o", "a", "al"}
         words = query.lower().replace("?", "").replace("¿", "").split()
         terms = [w for w in words if len(w) > 3 and w not in stopwords][:5]
-        
+
         all_nodes = []
         seen_nodes = {}
         for term in terms:
@@ -136,28 +173,77 @@ class LastRAGEngine:
                     existing_targets = set(seen_nodes[name].get("targets", []))
                     existing_targets.update(n.get("targets", []))
                     seen_nodes[name]["targets"] = list(existing_targets)
-                    
+
         return all_nodes
 
+    async def _graph_nodes_safe(self, query: str) -> tuple[list[dict], dict | None]:
+        """Devuelve (nodos, degradacion_o_None). Un fallo de Neo4j nunca se
+        traga: se devuelve como degradacion y el llamador la declara."""
+        if not self.neo4j_graph:
+            return [], {"component": "neo4j_graph", "reason": "NOT_CONFIGURED",
+                        "effect": "graph_context_unavailable"}
+        try:
+            return await self._graph_nodes(query), None
+        except Exception as exc:
+            return [], {"component": "neo4j_graph",
+                        "reason": f"NEO4J_ERROR:{type(exc).__name__}",
+                        "effect": "graph_context_unavailable"}
+
     async def _graph(self, state: RAGState) -> dict:
-        all_nodes = await self._graph_nodes(state["query"])
-        print(f"🕸️ [graph] {len(all_nodes)} nodos relacionados encontrados")
-        return {"active_graph": all_nodes}
+        # P0.5: si el grafo no esta disponible, la consulta NO sigue el camino
+        # graph en silencio: se ejecuta hybrid y la degradacion queda declarada
+        # en la respuesta (route_effective + degradations).
+        nodes, degradation = await self._graph_nodes_safe(state["query"])
+        if degradation:
+            hybrid_update = await self._hybrid(state)
+            entry = {**degradation, "from_route": "graph", "to_route": "hybrid",
+                     "fallback": "hybrid_retrieval"}
+            hybrid_update["degradations"] = self._decl(
+                {**state, "degradations": hybrid_update.get("degradations",
+                                                            state.get("degradations", []))},
+                entry,
+            )
+            print(f"⚠️ [graph] DEGRADADO a hybrid: {degradation['reason']}")
+            return {**hybrid_update, "route_effective": "hybrid"}
+        print(f"🕸️ [graph] {len(nodes)} nodos relacionados encontrados")
+        return {"active_graph": nodes}
 
     async def _hybrid(self, state: RAGState) -> dict:
-        # Triple en paralelo
+        # Triple en paralelo; cada fuente declara su propia degradacion
         sem_task = self.backend.search(state["query"], top_k=self.top_k)
-        struct_task = self.lastindex.structural_search(state["query"], top_k=self.top_k)
-        graph_task = self._graph_nodes(state["query"])
+        struct_task = self._structural_search_safe(state["query"])
+        graph_task = self._graph_nodes_safe(state["query"])
 
-        sem_res, struct_chunks, active_graph = await asyncio.gather(
+        sem_res, struct, graph = await asyncio.gather(
             sem_task, struct_task, graph_task
         )
-        
-        sem_chunks = await self.lastindex.enrich_chunks(sem_res.chunks)
-        fused = self._fuse(sem_chunks, struct_chunks)
-        print(f"🔀 [hybrid] {len(fused)} fragmentos fusionados, {len(active_graph)} nodos de grafo en contexto")
-        return {"chunks": fused, "active_graph": active_graph}
+
+        degradations = list(state.get("degradations", []))
+        if sem_res.degraded_reason:
+            degradations.append({"component": f"backend:{self.backend.name}",
+                                 "reason": sem_res.degraded_reason,
+                                 "effect": "semantic_retrieval_failed"})
+        if struct[1]:
+            degradations.append({**struct[1], "effect": "structural_retrieval_failed"})
+        if graph[1]:
+            degradations.append(graph[1])
+
+        sem_chunks, decls = await self._envelope_chunks(
+            {**state, "degradations": degradations}, sem_res.chunks
+        )
+        if decls:
+            degradations = decls
+
+        fused = self._fuse(sem_chunks, struct[0])
+        print(f"🔀 [hybrid] {len(fused)} fragmentos fusionados, {len(graph[0])} nodos de grafo en contexto")
+        return {"chunks": fused, "active_graph": graph[0], "degradations": degradations}
+
+    async def _structural_search_safe(self, query: str) -> tuple[list[EvidenceChunk], dict | None]:
+        try:
+            return await self.lastindex.structural_search(query, top_k=self.top_k), None
+        except Exception as exc:
+            return [], {"component": "lastindex",
+                        "reason": f"NEO4J_UNREACHABLE:{type(exc).__name__}"}
 
     async def _external(self, state: RAGState) -> dict:
         if not self.external_search:
@@ -282,8 +368,8 @@ class LastRAGEngine:
 
     async def run(self, query: str) -> dict[str, Any]:
         initial: RAGState = {
-            "query": query, "route": "", "chunks": [],
-            "active_graph": [], "resurrected_nodes": [],
+            "query": query, "route": "", "route_effective": "", "degradations": [],
+            "chunks": [], "active_graph": [], "resurrected_nodes": [],
             "external_context": "", "response": "",
             "confidence": 0.0, "is_general_knowledge": False,
         }
@@ -293,9 +379,12 @@ class LastRAGEngine:
             "confidence": final["confidence"],
             "is_general_knowledge": final["is_general_knowledge"],
             "route": final["route"],
+            "route_effective": final.get("route_effective") or final["route"],
+            "degradations": final.get("degradations", []),
             "citations": [
                 c.citation.to_dict() for c in final["chunks"] if c.citation
             ],
+            "evidence": [c.to_dict() for c in final["chunks"]],
             "active_graph": final["active_graph"],
             "resurrected_nodes": final["resurrected_nodes"],
             "evidence_count": len(final["chunks"]),

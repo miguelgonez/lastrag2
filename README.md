@@ -87,18 +87,35 @@ query → Hermes router → {semantic | structural | hybrid | graph}
                   respuesta trazable + citaciones
 ```
 
-## Estado actual
+## Estado actual — LastRAG 2 Foundation / PRE-ALPHA
 
-Implementado y verificado (test de humo en verde):
+No es un producto ni un sistema validado: es un core-contract v2 en
+estabilización (ver `ROADMAP_FOUNDATION.md`; reorientación del PI del
+6-oct-2026: «arquitectura diseñada» ≠ «sistema validado»).
+
+Contratos implementados (test de humo en verde, con dobles):
 - Interfaz `VectorBackend` + modelos de citación.
 - LastIndex: esquema Neo4j, parser estructural, navigator (ingesta + resolución + retriever estructural).
 - Backends Gemini y Qdrant tras la interfaz.
 - Motor RAG agnóstico con router Hermes y scoring honesto.
-- Pipeline de ingesta unificado con `block_id` común.
+- Pipeline de ingesta unificada con `block_id` común.
 
-Pendiente (siguiente iteración):
-1. Nodo `graph` real (relaciones clínicas Neo4j) — hoy cae a `hybrid`.
-2. `LocalLLM` para DGX (vLLM/TGI) — stub.
-3. Benchmark de 20 preguntas como contrato de medición (Fase 5 del roadmap, adelantada).
-4. Capa FastAPI + persistencia (SQLite genérico / Postgres en despliegue).
-5. Reranking en modo híbrido (hoy fusión por locator con prioridad estructural).
+Wave 0 (P0.5 SOVEREIGN E2E FOUNDATION) en curso:
+- `LocalLLM` real: cliente OpenAI-compatible (vLLM/TGI/Ollama/LM Studio) con
+  timeout, retries limitados, streaming, health check, model metadata y
+  fail-closed. Pendiente de ejercitar contra un endpoint de modelo real.
+- Qdrant real en modo local persistente: ingesta/búsqueda/filtros/top-k/
+  reinicio verificados con embedder de desarrollo DECLARADO
+  (`local-hash-ngram-256-v1`); el embedder biomédico del despliegue queda
+  pendiente.
+- Sin fallback silencioso: toda degradación (graph→hybrid, backend caído,
+  Neo4j inalcanzable) queda en `route_effective` + `degradations[]` de la
+  respuesta.
+
+Pendiente (orden congelado en ROADMAP_FOUNDATION.md):
+1. Neo4j real en el camino E2E (`Document→Section→EvidenceBlock→Citation`
+   persistido y consultado) — requiere servidor (Docker/remoto autorizado).
+2. Endpoint LLM real (vLLM en Spark/Picasso, Ollama o LM Studio local).
+3. Gate FOUNDATION-T3 = REAL_E2E_PASS; después benchmark (Wave 1, contra
+   LastRAG-MD stable-v1.0) y sólo entonces features (Waves 2-6).
+4. Capa FastAPI completa + persistencia y reranking híbrido.

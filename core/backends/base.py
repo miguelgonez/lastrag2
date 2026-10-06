@@ -80,6 +80,10 @@ class RetrievalResult:
     chunks: list[EvidenceChunk] = field(default_factory=list)
     backend: str = "unknown"            # nombre del backend que respondio
     raw: Any = None                     # respuesta cruda (debug, opcional)
+    # P0.5: un error del backend NUNCA se degrada en silencio. Si la busqueda
+    # fallo, el resultado llega vacio pero con la razon; el motor la declara
+    # en `degradations[]` de la respuesta final.
+    degraded_reason: Optional[str] = None
 
     @property
     def text_evidence(self) -> list[str]:
@@ -165,6 +169,11 @@ class VectorBackend(ABC):
     async def close(self) -> None:
         """Libera recursos. Override opcional."""
         return None
+
+    async def health(self) -> dict[str, Any]:
+        """Diagnostico de conectividad del backend (P0.5). Sin retries:
+        devuelve estado, nunca lanza. UNKNOWN si el backend no lo implementa."""
+        return {"status": "UNKNOWN", "reason": "HEALTH_CHECK_NOT_IMPLEMENTED"}
 
     # Utilidad comun para validar el gate PHI antes de ingerir datos reales.
     def assert_phi_allowed(self, contains_phi: bool) -> None:

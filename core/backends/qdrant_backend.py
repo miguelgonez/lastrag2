@@ -41,11 +41,22 @@ class QdrantBackend(VectorBackend):
         embedder: Optional[Embedder] = None,
         vector_size: int = 768,
         api_key: Optional[str] = None,
+        path: Optional[str] = None,
+        embedding_model: str = "unknown",
     ):
+        # P0.5: `path` activa el modo local persistente de qdrant-client (motor
+        # real de Qdrant en proceso, con almacenamiento en disco y reinicio).
+        # `url` mantiene el modo servidor (DGX / despliegue). Nunca ambos.
+        if path and url != "http://localhost:6333":
+            raise ValueError("QdrantBackend: usa `path` (local) o `url` (servidor), no ambos")
         self.url = url
+        self.path = path
         self.collection = collection
         self.vector_size = vector_size
         self.api_key = api_key
+        # Etiqueta de procedencia: el embedding usado queda registrado en cada
+        # punto y en cada respuesta. "unknown" solo es aceptable en desarrollo.
+        self.embedding_model = embedding_model
         self._embed = embedder or self._default_embedder()
         self._client = None  # qdrant_client.QdrantClient
 
@@ -53,7 +64,10 @@ class QdrantBackend(VectorBackend):
         from qdrant_client import QdrantClient
         from qdrant_client.models import Distance, VectorParams
 
-        self._client = QdrantClient(url=self.url, api_key=self.api_key)
+        if self.path is not None:
+            self._client = QdrantClient(path=self.path)
+        else:
+            self._client = QdrantClient(url=self.url, api_key=self.api_key)
         existing = {c.name for c in self._client.get_collections().collections}
         if self.collection not in existing:
             self._client.create_collection(
@@ -62,9 +76,13 @@ class QdrantBackend(VectorBackend):
                     size=self.vector_size, distance=Distance.COSINE
                 ),
             )
-            print(f"✅ Qdrant: coleccion '{self.collection}' creada")
+            print(f"✅ Qdrant: coleccion '{self.collection}' creada ({self.mode})")
         else:
-            print(f"✅ Qdrant: coleccion '{self.collection}' existente")
+            print(f"✅ Qdrant: coleccion '{self.collection}' existente ({self.mode})")
+
+    @property
+    def mode(self) -> str:
+        return "local-persistent" if self.path else f"server:{self.url}"
 
     async def ingest(
         self,
@@ -100,6 +118,7 @@ class QdrantBackend(VectorBackend):
                     "page": b.get("page"),
                     "section_path": b.get("section_path"),
                     "text": b["text"],
+                    "embedding_model": self.embedding_model,
                 },
             )
             for b, vec in zip(blocks, vectors)
@@ -133,16 +152,22 @@ class QdrantBackend(VectorBackend):
 
         vector = self._embed([query])[0]
         try:
-            hits = self._client.search(
+            # qdrant-client >= 1.10: query_points sustituye a search (eliminado)
+            response = self._client.query_points(
                 collection_name=self.collection,
-                query_vector=vector,
+                query=vector,
                 limit=top_k,
                 query_filter=qfilter,
                 with_payload=True,
             )
+            hits = response.points
         except Exception as e:
+            # P0.5: sin fallback silencioso. El error viaja en degraded_reason
+            # y el motor lo declara en la respuesta final.
             print(f"⚠️ Qdrant search error: {e}")
-            return RetrievalResult(backend=self.name)
+            return RetrievalResult(
+                backend=self.name, degraded_reason=f"QDRANT_ERROR:{type(e).__name__}"
+            )
 
         chunks = [
             EvidenceChunk(
@@ -181,6 +206,20 @@ class QdrantBackend(VectorBackend):
     async def close(self) -> None:
         if self._client:
             self._client.close()
+
+    async def health(self) -> dict[str, Any]:
+        """Diagnostico real de conectividad (P0.5). Sin retries: devuelve estado."""
+        if not self._client:
+            return {"status": "DOWN", "reason": "NOT_INITIALIZED", "backend": self.name,
+                    "mode": self.mode}
+        try:
+            names = [c.name for c in self._client.get_collections().collections]
+            return {"status": "UP", "backend": self.name, "mode": self.mode,
+                    "collections": names,
+                    "collection_ready": self.collection in names}
+        except Exception as exc:
+            return {"status": "DOWN", "reason": f"QDRANT_ERROR:{type(exc).__name__}",
+                    "backend": self.name, "mode": self.mode}
 
     # --- helpers ---
     @staticmethod

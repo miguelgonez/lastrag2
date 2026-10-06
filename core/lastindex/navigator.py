@@ -28,9 +28,11 @@ from ..backends.base import Citation, EvidenceChunk
 class LastIndex:
     """Capa de navegacion documental sobre Neo4j."""
 
-    def __init__(self, uri: str, user: str, password: str):
+    def __init__(self, uri: str, user: str, password: str, **driver_kwargs):
         from neo4j import AsyncGraphDatabase
-        self.driver = AsyncGraphDatabase.driver(uri, auth=(user, password))
+        # driver_kwargs (p. ej. connection_timeout) permite fallar rapido contra
+        # un Neo4j ausente: la degradacion debe declararse pronto, no colgar.
+        self.driver = AsyncGraphDatabase.driver(uri, auth=(user, password), **driver_kwargs)
 
     async def setup_schema(self) -> None:
         async with self.driver.session() as session:
