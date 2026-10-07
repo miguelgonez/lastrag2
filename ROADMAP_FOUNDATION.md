@@ -110,3 +110,11 @@ real (motor local persistente) + 5 registro de degradaciones + 3 E2E soberano.
 UNKNOWN declarados (no simulados): servidor Neo4j (sin Docker/OrbStack hoy),
 endpoint de modelo real, Docling, embedder biomédico real, HTTP de FastAPI
 en transporte. El gate FOUNDATION-T3 **NO está superado**.
+
+## Roadmap post-T3 (hallazgos FOUNDATION-T3, 6-oct-2026 — recibo b9b7d50f…)
+
+- **F1 · max_tokens acoplado a max_model_len**: el motor debe clampar/negociar `max_tokens` contra `model_metadata` del endpoint (el default 8192 provocó HTTP 400 explícito contra vLLM 4096). Estado: T3 superado con adaptador declarado; el clamp nativo es pendiente.
+- **F2 · gate PHI no reactivo a runtime**: `Settings` (dataclass) captura el env al importar; el gate no reacciona a cambios de entorno en runtime tras el primer import. Pendiente: defaults lazy o validación en construcción.
+- **F3 · política single-owner para Qdrant path=**: Qdrant local no admite dos clientes sobre el mismo path; documentar ciclo de vida de proceso (o Qdrant servidor para concurrencia).
+
+Nota de procedencia: estos puntos no rompen ningún gate de T3; el release acreditado permanece pineado en 22519f48 / tree 3182506b.
