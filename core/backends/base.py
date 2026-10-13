@@ -64,6 +64,7 @@ class EvidenceChunk:
     locator: str                        # referencia opaca propia del backend
     citation: Optional[Citation] = None  # la rellena LastIndex (post-retrieval)
     score: float = 0.0                  # score de similaridad del backend
+    kind: str = "text"                  # "text" | "table" | "figure" (Ola 3)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -71,6 +72,7 @@ class EvidenceChunk:
             "locator": self.locator,
             "citation": self.citation.to_dict() if self.citation else None,
             "score": self.score,
+            "kind": self.kind,
         }
 
 

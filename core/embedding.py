@@ -55,3 +55,28 @@ class HashingEmbedder:
 
     def __call__(self, texts: Sequence[str]) -> list[list[float]]:
         return [self._vector(t) for t in texts]
+
+
+class FastEmbedEmbedder:
+    """Embedder REAL local (ONNX vía fastembed, sin torch ni GPU).
+
+    Sustituye inyectable a HashingEmbedder. La etiqueta `model_id` viaja en
+    cada respuesta y en el payload de Qdrant para que ninguna medición
+    atribuya calidad al embedder equivocado. HONESTIDAD: la calidad
+    semántica de este modelo sobre corpus biomédico español NO se reclama
+    sin benchmark (ver scripts/benchmark_fusion.py); su ventaja frente a
+    hashing-dev es que SÍ proyecta semántica (modelo entrenado), pero el
+    nivel exacto queda por medir.
+    """
+
+    model_id = "paraphrase-multilingual-minilm-onnx-v1"
+
+    def __init__(self, model_name: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+                 dim: int = 384):
+        from fastembed import TextEmbedding  # dependencia opcional
+        self._model = TextEmbedding(model_name=model_name)
+        self.dim = dim
+
+    def __call__(self, texts: Sequence[str]) -> list[list[float]]:
+        # MiniLM paraphrase es simétrico: sin prefijos de tarea.
+        return [list(map(float, v)) for v in self._model.embed(list(texts))]

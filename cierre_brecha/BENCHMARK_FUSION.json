@@ -1,0 +1,88 @@
+{
+  "timestamp": "2026-10-13T17:19:17",
+  "corpus": "sintético ES biomédico (10 chunks, 5 queries con gold)",
+  "claim_limits": [
+    "NO valida calidad semántica sobre corpus real",
+    "NO valida calidad clínica"
+  ],
+  "hashing_dev": {
+    "embedding_model": "local-hash-ngram-256-v1",
+    "queries": [
+      {
+        "query": "¿Cuál es el tratamiento de primera línea en DM2?",
+        "gold": "blk_tto",
+        "recall3_locator": 1.0,
+        "recall3_rrf": 1.0
+      },
+      {
+        "query": "¿Qué dosis inicial tiene la metformina?",
+        "gold": "blk_dose",
+        "recall3_locator": 1.0,
+        "recall3_rrf": 1.0
+      },
+      {
+        "query": "¿Qué ensayo aleatorizado respalda la metformina?",
+        "gold": "blk_rct",
+        "recall3_locator": 1.0,
+        "recall3_rrf": 1.0
+      },
+      {
+        "query": "¿Qué se asocia con menor mortalidad cardiovascular?",
+        "gold": "blk_obs",
+        "recall3_locator": 1.0,
+        "recall3_rrf": 1.0
+      },
+      {
+        "query": "¿Cómo se administra la insulina glargina?",
+        "gold": "blk_ins",
+        "recall3_locator": 1.0,
+        "recall3_rrf": 1.0
+      }
+    ],
+    "recall3_locator": 1.0,
+    "recall3_rrf": 1.0
+  },
+  "fastembed_real": {
+    "embedding_model": "paraphrase-multilingual-minilm-onnx-v1",
+    "queries": [
+      {
+        "query": "¿Cuál es el tratamiento de primera línea en DM2?",
+        "gold": "blk_tto",
+        "recall3_locator": 1.0,
+        "recall3_rrf": 1.0
+      },
+      {
+        "query": "¿Qué dosis inicial tiene la metformina?",
+        "gold": "blk_dose",
+        "recall3_locator": 1.0,
+        "recall3_rrf": 1.0
+      },
+      {
+        "query": "¿Qué ensayo aleatorizado respalda la metformina?",
+        "gold": "blk_rct",
+        "recall3_locator": 1.0,
+        "recall3_rrf": 1.0
+      },
+      {
+        "query": "¿Qué se asocia con menor mortalidad cardiovascular?",
+        "gold": "blk_obs",
+        "recall3_locator": 1.0,
+        "recall3_rrf": 1.0
+      },
+      {
+        "query": "¿Cómo se administra la insulina glargina?",
+        "gold": "blk_ins",
+        "recall3_locator": 1.0,
+        "recall3_rrf": 1.0
+      }
+    ],
+    "recall3_locator": 1.0,
+    "recall3_rrf": 1.0
+  },
+  "degradation_cost": {
+    "healthy_p50_ms": 5.3,
+    "degraded_p50_ms": 3.2,
+    "degradation_declared": true,
+    "note": "coste de la degradación declarada vs pipeline sano (fake services; mide SOBRECOSTE del manejo fail-closed, no latencia de servicios reales)"
+  }
+}

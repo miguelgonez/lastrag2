@@ -1,0 +1,194 @@
+{
+  "passes": 4,
+  "history": [
+    {
+      "at": "2026-10-13T17:14:07",
+      "duration_s": 60.8,
+      "compliance": 0.2667,
+      "counts": {
+        "DONE": 4,
+        "PARTIAL": 0,
+        "PENDING": 11,
+        "FAILED": 0,
+        "INCOMPLETE": 0,
+        "BASELINE": 0
+      },
+      "problems": [
+        "CB-2: sin tests",
+        "CB-3: sin tests",
+        "CB-4: sin tests",
+        "CB-5: sin tests",
+        "CB-6: sin tests",
+        "CB-7: sin tests",
+        "CB-8: sin tests",
+        "CB-14: sin tests",
+        "CB-12: sin tests",
+        "CB-13: sin tests",
+        "CB-15: sin tests"
+      ]
+    },
+    {
+      "at": "2026-10-13T17:16:16",
+      "duration_s": 63.3,
+      "compliance": 0.9667,
+      "counts": {
+        "DONE": 14,
+        "PARTIAL": 1,
+        "PENDING": 0,
+        "FAILED": 0,
+        "INCOMPLETE": 0,
+        "BASELINE": 0
+      },
+      "problems": []
+    },
+    {
+      "at": "2026-10-13T17:17:36",
+      "duration_s": 63.9,
+      "compliance": 0.9667,
+      "counts": {
+        "DONE": 14,
+        "PARTIAL": 1,
+        "PENDING": 0,
+        "FAILED": 0,
+        "INCOMPLETE": 0,
+        "BASELINE": 0
+      },
+      "problems": []
+    },
+    {
+      "at": "2026-10-13T17:20:18",
+      "duration_s": 59.9,
+      "compliance": 0.9667,
+      "counts": {
+        "DONE": 14,
+        "PARTIAL": 1,
+        "PENDING": 0,
+        "FAILED": 0,
+        "INCOMPLETE": 0,
+        "BASELINE": 0
+      },
+      "problems": []
+    },
+    {
+      "at": "2026-10-13T17:21:17",
+      "duration_s": 58.8,
+      "compliance": 0.9667,
+      "counts": {
+        "DONE": 14,
+        "PARTIAL": 1,
+        "PENDING": 0,
+        "FAILED": 0,
+        "INCOMPLETE": 0,
+        "BASELINE": 0
+      },
+      "problems": []
+    }
+  ],
+  "prereg_sha256": "5ad4308b5f53c887646d9f691366cf27a3339eeb0a6b3b78441e7781239a16f0",
+  "sealed_at": "2026-10-13T17:13:06",
+  "last_verdicts": {
+    "CB-1": {
+      "desc": "Triple RAG",
+      "ola": "base",
+      "status": "DONE",
+      "evidence": "suite base verde + T3 51/51 (6-oct)"
+    },
+    "CB-9": {
+      "desc": "Pipeline E2E + audit trail",
+      "ola": "base",
+      "status": "DONE",
+      "evidence": "suite base verde + T3 51/51 (6-oct)"
+    },
+    "CB-10": {
+      "desc": "Ingesta sellada + hashes",
+      "ola": "base",
+      "status": "DONE",
+      "evidence": "suite base verde + T3 51/51 (6-oct)"
+    },
+    "CB-11": {
+      "desc": "Soberanía + fail-closed",
+      "ola": "base",
+      "status": "DONE",
+      "evidence": "suite base verde + T3 51/51 (6-oct)"
+    },
+    "CB-2": {
+      "desc": "Router iterativo (decompose/sufficiency/gap)",
+      "ola": "1",
+      "tests": 5,
+      "status": "DONE",
+      "evidence": "5 tests (3P/1B)"
+    },
+    "CB-3": {
+      "desc": "RRF (port del control plane)",
+      "ola": "1",
+      "tests": 4,
+      "status": "DONE",
+      "evidence": "4 tests (1P/2B)"
+    },
+    "CB-4": {
+      "desc": "Reranking clínico + cross-encoder ONNX",
+      "ola": "1",
+      "tests": 5,
+      "status": "DONE",
+      "evidence": "5 tests (2P/2B)"
+    },
+    "CB-5": {
+      "desc": "Evidence Pack 2.0 claim↔evidence",
+      "ola": "2",
+      "tests": 4,
+      "status": "DONE",
+      "evidence": "4 tests (3P/1B)"
+    },
+    "CB-6": {
+      "desc": "Conflict engine",
+      "ola": "2",
+      "tests": 4,
+      "status": "DONE",
+      "evidence": "4 tests (2P/2B)"
+    },
+    "CB-7": {
+      "desc": "Temporal RAG",
+      "ola": "2",
+      "tests": 4,
+      "status": "DONE",
+      "evidence": "4 tests (2P/2B)"
+    },
+    "CB-8": {
+      "desc": "Causal RAG + CausalGate",
+      "ola": "4",
+      "tests": 6,
+      "status": "DONE",
+      "evidence": "6 tests (3P/3B)"
+    },
+    "CB-14": {
+      "desc": "Validación sintética causal (ground truth)",
+      "ola": "4",
+      "tests": 4,
+      "status": "DONE",
+      "evidence": "4 tests (1P/1B)",
+      "external": "OMEGA-I2 con servicios reales del programa: dependencia externa (prestador sellado); aquí se acredita el benchmark sintético"
+    },
+    "CB-12": {
+      "desc": "Failure Graph con coste medido",
+      "ola": "5",
+      "tests": 4,
+      "status": "DONE",
+      "evidence": "4 tests (2P/2B)"
+    },
+    "CB-13": {
+      "desc": "Taxonomía de abstención",
+      "ola": "5",
+      "tests": 3,
+      "status": "DONE",
+      "evidence": "3 tests (2P/1B)"
+    },
+    "CB-15": {
+      "desc": "Multimodalidad (tablas/figuras)",
+      "ola": "3",
+      "tests": 6,
+      "status": "PARTIAL",
+      "evidence": "6 tests (5P/1B)",
+      "declaration": "extracción posicional sin modelo de visión (etiquetado posicional-v1)"
+    }
+  }
+}
