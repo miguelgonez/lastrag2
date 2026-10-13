@@ -105,7 +105,7 @@ real (motor local persistente) + 5 registro de degradaciones + 3 E2E soberano.
   `LASTRAG_E2E_LLM_ENDPOINT` (+ `LASTRAG_TEST_NEO4J_URI`) la MISMA prueba
   ejecuta la cadena completa y exige respuesta con citas (camino T3).
 - Reparado: instalación editable del venv apuntaba a ruta muerta
-  (`/Users/yeye/Documents/py/...`); reinstalada sobre la ruta real.
+  (`~/Documents/py/...`); reinstalada sobre la ruta real.
 
 UNKNOWN declarados (no simulados): servidor Neo4j (sin Docker/OrbStack hoy),
 endpoint de modelo real, Docling, embedder biomédico real, HTTP de FastAPI
