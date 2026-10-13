@@ -44,6 +44,28 @@ CORPUS = [
     ("blk_life", "El ejercicio aeróbico regular mejora el control glucémico y la sensibilidad a la insulina."),
     ("blk_mono", "La monitorización continua de glucosa reduce el tiempo en hipoglucemia."),
 ]
+# Conjunto DURO: paráfrasis con solapamiento léxico mínimo — el embedding
+# hashing-dev DEBE fallar aquí; un embedder semántico real debe ganar.
+# (Es el recibo que justifica el gate de embedder real de la Ola 1.)
+CORPUS_HARD = [
+    ("gold_hipogluc", "Los inhibidores de SGLT2 provocan pérdida de glucosa por orina y bajadas de azúcar."),
+    ("gold_neo", "La canagliflozina se asocia a cetoacidosis euglucémica de inicio agudo."),
+    ("gold_cardio", "La empagliflozina reduce los ingresos por descompensación cardíaca."),
+    ("d1", "La dieta mediterránea con aceite de oliva mejora el perfil lipídico."),
+    ("d2", "El ejercicio aeróbico regular mejora la capacidad funcional y el estado de ánimo."),
+    ("d3", "La cirugía bariátrica reduce el peso y la resolución de comorbilidades."),
+    ("d4", "Los corticoides sistémicos aumentan la glucemia de forma transitoria."),
+    ("d5", "La insulina rápida corrige las hiperglucemias postprandiales."),
+    ("d6", "El control de la presión arterial previene la nefropatía diabética."),
+    ("d7", "La retinopatía diabética requiere cribado anual con fondo de ojo."),
+    ("d8", "La metformina es primera línea y actúa reduciendo la gluconeogénesis hepática."),
+]
+QUERIES_HARD = [
+    ("¿Qué ocurre con el azúcar en sangre al orinarla con los nuevos fármacos renales?", "gold_hipogluc"),
+    ("¿Qué complicación aguda metabólica se atribuye a los inhibidores del cotransportador renal?", "gold_neo"),
+    ("¿Qué beneficios hay para el corazón descompensado con los gliflozinas?", "gold_cardio"),
+]
+
 QUERIES = [
     ("¿Cuál es el tratamiento de primera línea en DM2?", "blk_tto"),
     ("¿Qué dosis inicial tiene la metformina?", "blk_dose"),
@@ -84,6 +106,26 @@ def embedder_ranking(embedder, query, k=5, label=""):
 
 def recall_at_3(ranked, gold):
     return 1.0 if gold in ranked[:3] else 0.0
+
+
+def bench_hard(embedder, model_label):
+    """Recall@1 sobre el conjunto duro (paráfrasis). hashing-dev se espera
+    < 1.0; el embedder real debería superarlo — recibo del valor semántico."""
+    results = {"embedding_model": model_label, "set": "hard", "queries": []}
+    hits = []
+    corpus_texts = [t for _, t in CORPUS_HARD]
+    for query, gold in QUERIES_HARD:
+        qv = embedder([query])[0]
+        scored = sorted(
+            ((cosine(qv, embedder([t])[0]), loc) for loc, t in CORPUS_HARD),
+            reverse=True)
+        top = scored[0][1]
+        hit = top == gold
+        hits.append(hit)
+        results["queries"].append({"query": query, "gold": gold,
+                                   "top1": top, "hit": hit})
+    results["recall1"] = sum(hits) / len(hits)
+    return results
 
 
 def bench_fusion(embedder, model_label):
@@ -155,10 +197,12 @@ def main():
            "claim_limits": ["NO valida calidad semántica sobre corpus real",
                             "NO valida calidad clínica"]}
     out["hashing_dev"] = bench_fusion(HashingEmbedder(), "local-hash-ngram-256-v1")
+    out["hashing_dev_hard"] = bench_hard(HashingEmbedder(), "local-hash-ngram-256-v1")
     try:
         from core.embedding import FastEmbedEmbedder
         emb = FastEmbedEmbedder()
         out["fastembed_real"] = bench_fusion(emb, emb.model_id)
+        out["fastembed_real_hard"] = bench_hard(emb, emb.model_id)
     except Exception as exc:
         out["fastembed_real"] = {"error": f"{type(exc).__name__}: {exc}",
                                  "declared_absence": True}
@@ -166,7 +210,7 @@ def main():
     dest = ROOT / "cierre_brecha" / "BENCHMARK_FUSION.json"
     dest.write_text(json.dumps(out, indent=2, ensure_ascii=False))
     print(json.dumps({k: v for k, v in out.items()
-                      if k in ("hashing_dev", "fastembed_real",
+                      if k in ("hashing_dev_hard", "fastembed_real_hard",
                                "degradation_cost")},
                      indent=2, ensure_ascii=False)[:2500])
     print(f"\nrecibo: {dest}")

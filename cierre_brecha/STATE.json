@@ -1,5 +1,5 @@
 {
-  "passes": 4,
+  "passes": 6,
   "history": [
     {
       "at": "2026-10-13T17:14:07",
@@ -72,6 +72,34 @@
     {
       "at": "2026-10-13T17:21:17",
       "duration_s": 58.8,
+      "compliance": 0.9667,
+      "counts": {
+        "DONE": 14,
+        "PARTIAL": 1,
+        "PENDING": 0,
+        "FAILED": 0,
+        "INCOMPLETE": 0,
+        "BASELINE": 0
+      },
+      "problems": []
+    },
+    {
+      "at": "2026-10-14T00:35:51",
+      "duration_s": 56.6,
+      "compliance": 0.9667,
+      "counts": {
+        "DONE": 14,
+        "PARTIAL": 1,
+        "PENDING": 0,
+        "FAILED": 0,
+        "INCOMPLETE": 0,
+        "BASELINE": 0
+      },
+      "problems": []
+    },
+    {
+      "at": "2026-10-14T00:36:47",
+      "duration_s": 56.1,
       "compliance": 0.9667,
       "counts": {
         "DONE": 14,
@@ -171,9 +199,9 @@
     "CB-12": {
       "desc": "Failure Graph con coste medido",
       "ola": "5",
-      "tests": 4,
+      "tests": 6,
       "status": "DONE",
-      "evidence": "4 tests (2P/2B)"
+      "evidence": "6 tests (3P/3B)"
     },
     "CB-13": {
       "desc": "Taxonomía de abstención",

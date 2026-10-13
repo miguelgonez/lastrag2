@@ -1,4 +1,4 @@
-✅ suite completa VERDE: 75 passed, 1 warning in 6.30s
+✅ suite completa VERDE: 77 passed, 1 warning in 6.23s
 
 === SCORECARD — cumplimiento ponderado: 97% (14 DONE + 1 PARTIAL de 15) ===
 ✅ CB-2 [ola 1] Router iterativo (decompose/sufficiency/gap): DONE
@@ -17,4 +17,4 @@
 ✅ CB-11 [ola base] Soberanía + fail-closed: DONE
 ✅ CB-9 [ola base] Pipeline E2E + audit trail: DONE
 
-Pasadas verdes consecutivas: 4/2
+Pasadas verdes consecutivas: 6/2

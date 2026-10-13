@@ -443,6 +443,13 @@ class LastRAGEngine:
             feats["pack"] = {"claims": len(pack.claims),
                              "conflicts": self._conflict_engine.summarize(conflicts),
                              "gaps": pack.gaps}
+            if conflicts and self.failure_graph:
+                # Ceguera ante conflictos EVITADA: detectadas y declaradas,
+                # no promediadas. El modo se registra con su razón.
+                self.failure_graph.record(
+                    "CONFLICT_BLINDNESS",
+                    detail=f"evitada: {len(conflicts)} grupos de "
+                           f"contradicción detectados y declarados")
             pack_render = pack.render_for_prompt()
 
             # Ola 4: frontera correlación→recomendación (código, no prosa)

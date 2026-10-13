@@ -51,6 +51,44 @@ def test_cb12_engine_records_retrieval_miss_permitted():
     assert engine.failure_graph.counts()[RETRIEVAL_MISS] >= 1
 
 
+def test_cb12_conflict_blindness_recorded_when_declared_permitted():
+    """Con contradicciones en el corpus, el pack las detecta y declara: la
+    ceguera ante conflictos queda REGISTRADA como evitada."""
+    from core.rag.failure_graph import CONFLICT_BLINDNESS
+    corpus = [
+        EvidenceChunk(text="Ensayo aleatorizado: el fármaco aumenta el riesgo "
+                           "de sangrado frente a placebo.", locator="blk_up"),
+        EvidenceChunk(text="Estudio observacional: el fármaco disminuye el "
+                           "riesgo de sangrado en la práctica clínica.",
+                      locator="blk_down"),
+    ]
+    engine = LastRAGEngine(FakeBackend(corpus), FakeLastIndex(), FakeLLM(),
+                           build_pack=True, failure_graph=FailureGraph())
+    result = asyncio.run(engine.run("¿Qué evidencia hay sobre el fármaco?"))
+    assert result["features"]["pack"]["conflicts"]["conflict_groups"] >= 1
+    records = engine.failure_graph.counts()
+    assert records[CONFLICT_BLINDNESS] >= 1
+    detail = [r.detail for r in engine.failure_graph.records
+              if r.mode == CONFLICT_BLINDNESS][0]
+    assert "evitada" in detail
+
+
+def test_cb12_no_pack_no_conflict_detection_blocked():
+    """Sin build_pack no hay análisis de conflictos: nada que registrar
+    (el modo existe para lo que se declara, no para lo que se ignora)."""
+    from core.rag.failure_graph import CONFLICT_BLINDNESS
+    corpus = [
+        EvidenceChunk(text="El fármaco aumenta el riesgo de sangrado.",
+                      locator="blk_up"),
+        EvidenceChunk(text="El fármaco disminuye el riesgo de sangrado.",
+                      locator="blk_down"),
+    ]
+    engine = LastRAGEngine(FakeBackend(corpus), FakeLastIndex(), FakeLLM(),
+                           failure_graph=FailureGraph())
+    asyncio.run(engine.run("¿Qué evidencia hay sobre el fármaco?"))
+    assert engine.failure_graph.counts()[CONFLICT_BLINDNESS] == 0
+
+
 def test_cb12_abstention_failure_never_fires_on_honest_scorer_blocked():
     """Caso negativo: con el scorer honesto del motor es IMPOSIBLE responder
     con confianza alta y cero citas — ABSTENTION_FAILURE no se dispara."""

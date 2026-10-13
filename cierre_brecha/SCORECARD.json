@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-13T17:21:17",
+  "timestamp": "2026-10-14T00:36:47",
   "compliance_ponderado": 0.9667,
   "counts": {
     "DONE": 14,
@@ -95,9 +95,9 @@
     "CB-12": {
       "desc": "Failure Graph con coste medido",
       "ola": "5",
-      "tests": 4,
+      "tests": 6,
       "status": "DONE",
-      "evidence": "4 tests (2P/2B)"
+      "evidence": "6 tests (3P/3B)"
     },
     "CB-13": {
       "desc": "Taxonomía de abstención",
@@ -115,6 +115,6 @@
       "declaration": "extracción posicional sin modelo de visión (etiquetado posicional-v1)"
     }
   },
-  "passes_verdes": 4,
+  "passes_verdes": 6,
   "prereg_sha256": "5ad4308b5f53c887646d9f691366cf27a3339eeb0a6b3b78441e7781239a16f0"
 }

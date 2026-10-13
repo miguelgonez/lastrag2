@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-13T17:19:17",
+  "timestamp": "2026-10-14T00:34:08",
   "corpus": "sintético ES biomédico (10 chunks, 5 queries con gold)",
   "claim_limits": [
     "NO valida calidad semántica sobre corpus real",
@@ -42,6 +42,31 @@
     "recall3_locator": 1.0,
     "recall3_rrf": 1.0
   },
+  "hashing_dev_hard": {
+    "embedding_model": "local-hash-ngram-256-v1",
+    "set": "hard",
+    "queries": [
+      {
+        "query": "¿Qué ocurre con el azúcar en sangre al orinarla con los nuevos fármacos renales?",
+        "gold": "gold_hipogluc",
+        "top1": "d7",
+        "hit": false
+      },
+      {
+        "query": "¿Qué complicación aguda metabólica se atribuye a los inhibidores del cotransportador renal?",
+        "gold": "gold_neo",
+        "top1": "d4",
+        "hit": false
+      },
+      {
+        "query": "¿Qué beneficios hay para el corazón descompensado con los gliflozinas?",
+        "gold": "gold_cardio",
+        "top1": "gold_neo",
+        "hit": false
+      }
+    ],
+    "recall1": 0.0
+  },
   "fastembed_real": {
     "embedding_model": "paraphrase-multilingual-minilm-onnx-v1",
     "queries": [
@@ -79,9 +104,34 @@
     "recall3_locator": 1.0,
     "recall3_rrf": 1.0
   },
+  "fastembed_real_hard": {
+    "embedding_model": "paraphrase-multilingual-minilm-onnx-v1",
+    "set": "hard",
+    "queries": [
+      {
+        "query": "¿Qué ocurre con el azúcar en sangre al orinarla con los nuevos fármacos renales?",
+        "gold": "gold_hipogluc",
+        "top1": "gold_hipogluc",
+        "hit": true
+      },
+      {
+        "query": "¿Qué complicación aguda metabólica se atribuye a los inhibidores del cotransportador renal?",
+        "gold": "gold_neo",
+        "top1": "d8",
+        "hit": false
+      },
+      {
+        "query": "¿Qué beneficios hay para el corazón descompensado con los gliflozinas?",
+        "gold": "gold_cardio",
+        "top1": "gold_cardio",
+        "hit": true
+      }
+    ],
+    "recall1": 0.6666666666666666
+  },
   "degradation_cost": {
-    "healthy_p50_ms": 5.3,
-    "degraded_p50_ms": 3.2,
+    "healthy_p50_ms": 3.6,
+    "degraded_p50_ms": 3.6,
     "degradation_declared": true,
     "note": "coste de la degradación declarada vs pipeline sano (fake services; mide SOBRECOSTE del manejo fail-closed, no latencia de servicios reales)"
   }

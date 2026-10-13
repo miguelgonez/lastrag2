@@ -1,0 +1,21 @@
+name: suite
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Dependencias (motor + test, sin servicios externos)
+        run: |
+          pip install langgraph pymupdf python-dotenv pytest \
+                      qdrant-client neo4j
+      - name: Suite completa (75 tests; los que exigen modelos/services se
+          declaran como skip, nunca éxito falso)
+        run: python -m pytest tests/ -q

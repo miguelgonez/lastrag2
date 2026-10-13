@@ -19,6 +19,7 @@ from dataclasses import dataclass, field
 from ..backends.base import EvidenceChunk
 
 TABLE_KIND = "table"
+TABLE_EXTRACTOR_VERSION = "find-tables-v1 (detector PyMuPDF) + posicional-fallback"
 FIGURE_KIND = "figure"
 MULTIMODAL_HINTS = ("tabla", "cuadro", "figura", "gráfico", "grafico", "imagen")
 
@@ -70,8 +71,36 @@ class FigureRef:
         )
 
 
-def extract_tables(pdf_path: str, max_pages: int = 50) -> list[TableBlock]:
-    """Extracción posicional: palabras agrupadas por banda-y (fila) y filas
+def _extract_tables_detector(pdf_path: str, max_pages: int = 50) -> list[TableBlock]:
+    """Extracción con el detector REAL de tablas de PyMuPDF (find_tables):
+    reconoce la rejilla por líneas/espaciado, no por heurística de bandas."""
+    import fitz
+
+    tables: list[TableBlock] = []
+    with fitz.open(pdf_path) as doc:
+        for pno in range(min(max_pages, doc.page_count)):
+            page = doc[pno]
+            try:
+                tabs = page.find_tables()
+            except Exception:
+                continue
+            blocks = page.get_text("blocks")
+            for t in tabs.tables:
+                rows = [r for r in (t.extract() or []) if any(c and str(c).strip() for c in r)]
+                if len(rows) < 2:
+                    continue
+                caption = ""
+                for b in blocks:
+                    if b[3] <= t.bbox[1] + 2 and _TABLE_CAPTION_RE.match(b[4].strip()):
+                        caption = b[4].strip()
+                        break
+                tables.append(TableBlock(page=pno + 1, caption=caption,
+                                         rows=[[str(c or "") for c in r] for r in rows]))
+    return tables
+
+
+def _extract_tables_positional(pdf_path: str, max_pages: int = 50) -> list[TableBlock]:
+    """Fallback posicional: palabras agrupadas por banda-y (fila) y filas
     con ≥2 columnas alineadas en ≥2 filas consecutivas = tabla."""
     import fitz  # PyMuPDF (dependencia core)
 
@@ -120,6 +149,16 @@ def extract_tables(pdf_path: str, max_pages: int = 50) -> list[TableBlock]:
                         caption = first
                         break
                 tables.append(TableBlock(page=pno + 1, caption=caption, rows=block))
+    return tables
+
+
+def extract_tables(pdf_path: str, max_pages: int = 50) -> list[TableBlock]:
+    """Estrategia auto: detector real de PyMuPDF; si no encuentra nada,
+    fallback posicional. La vía usada es parte del alcance declarado
+    (TABLE_EXTRACTOR_VERSION)."""
+    tables = _extract_tables_detector(pdf_path, max_pages)
+    if not tables:
+        tables = _extract_tables_positional(pdf_path, max_pages)
     return tables
 
 
