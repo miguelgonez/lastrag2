@@ -1,5 +1,5 @@
 {
-  "passes": 8,
+  "passes": 9,
   "history": [
     {
       "at": "2026-10-14T08:39:12",
@@ -45,6 +45,12 @@
     },
     {
       "at": "2026-10-14T16:19:59",
+      "delta_rec1": 0.75,
+      "improvement": true,
+      "cross_encoder": "ok"
+    },
+    {
+      "at": "2026-10-14T18:02:51",
       "delta_rec1": 0.75,
       "improvement": true,
       "cross_encoder": "ok"

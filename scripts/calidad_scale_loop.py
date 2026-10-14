@@ -188,6 +188,7 @@ def main() -> int:
         zb = np.load(npz_b)
         bvecs = zb["vectors"]
         order_b = [by_pmid[pm] for pm in zb["pmids"]]
+        bvecs_shared = bvecs  # para la variante EN (mismo pool)
 
         # Consultas ES embebidas por PubMedBERT en la B200 (job/srun de
         # Picasso): sin ellas, la vía biomédica queda DECLARADA no medible
@@ -224,6 +225,35 @@ def main() -> int:
                             "scale_embeddings.py --biomed en GPU; p.ej. "
                             "Picasso B200) — DECLARADO, no medido"}
 
+    # Cierre del hilo embeddings: mismas vías, consultas EN — aísla si el
+    # 0.0 de PubMedBERT era IDIOMA (cross-lingual) o dominio/representación.
+    biomed_en = None
+    npz_en = DATA / f"query_embeddings_biomed_en_{corpus_hash}.npz"
+    if npz_en.exists() and npz_b.exists():
+        ze = np.load(npz_en)
+        qv_en = {str(q): ze["vectors"][i] for i, q in enumerate(ze["queries"])}
+        order_e = [by_pmid[pm] for pm in zb["pmids"]]
+
+        # (mapeo posicional: la i-ésima consulta EN corresponde a QUERIES[i])
+        en_vecs = list(qv_en.values())
+
+        def _rank_en(i: int) -> list[int]:
+            top = np.argsort(-(bvecs_shared @ en_vecs[i]))[:10]
+            return [order_e[int(t)] for t in top]
+
+        accs = {"rec1": [], "p3": [], "mrr": []}
+        details = []
+        for i, (query, topic) in enumerate(QUERIES):
+            order = _rank_en(i)
+            m = metrics(order, rows, topic, gold_report)
+            for k in accs:
+                accs[k].append(m[k])
+            details.append({"query_es": query, "topic": topic, **m})
+        biomed_en = {"model": "PubMedBERT@B200 (consultas EN, coseno puro)",
+                     **{k: round(sum(v) / len(v), 3) for k, v in accs.items()},
+                     "queries": details,
+                     "purpose": "aislar idioma vs dominio"}
+
     delta = real["rec1"] - baseline["rec1"]
     improvement = delta >= 0.15 or (real["mrr"] > baseline["mrr"] + 0.08)
 
@@ -243,6 +273,7 @@ def main() -> int:
         "embeddings": {"engine": receipt_emb.get("engine"),
                        "model": receipt_emb.get("model")},
         "baseline": baseline, "real": real, "biomedical": biomed,
+        "biomedical_en": biomed_en,
         "cross_encoder": cross_status,
         "delta_rec1": round(delta, 3), "gate": "Δrec@1≥0.15 o MRR>base+0.08",
         "improvement_demonstrated": improvement,

@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-14T16:20:24",
+  "timestamp": "2026-10-14T18:03:18",
   "corpus": {
     "n": 48399,
     "hash": "863c457ef245c6fe",
@@ -290,6 +290,57 @@
         ]
       }
     ]
+  },
+  "biomedical_en": {
+    "model": "PubMedBERT@B200 (consultas EN, coseno puro)",
+    "rec1": 0.667,
+    "p3": 0.667,
+    "mrr": 0.75,
+    "queries": [
+      {
+        "query_es": "¿Qué medicamentos hacen eliminar azúcar por la orina en la diabetes tipo 2?",
+        "topic": "sglt2",
+        "rec1": 0.0,
+        "p3": 0.0,
+        "mrr": 0.0
+      },
+      {
+        "query_es": "¿Cuál es el fármaco oral de primera línea en la diabetes y cómo actúa en el hígado?",
+        "topic": "metformin",
+        "rec1": 0.0,
+        "p3": 0.6666666666666666,
+        "mrr": 0.5
+      },
+      {
+        "query_es": "¿Qué tratamientos reducen los ingresos hospitalarios por fallo cardíaco descompensado?",
+        "topic": "heart_failure",
+        "rec1": 1.0,
+        "p3": 1.0,
+        "mrr": 1.0
+      },
+      {
+        "query_es": "¿El cribado radiológico del pulmón disminuye la mortalidad por cáncer?",
+        "topic": "lung_screening",
+        "rec1": 1.0,
+        "p3": 1.0,
+        "mrr": 1.0
+      },
+      {
+        "query_es": "¿Cómo se controla la glucemia basal en la diabetes del adulto y sus complicaciones?",
+        "topic": "t2d_general",
+        "rec1": 1.0,
+        "p3": 1.0,
+        "mrr": 1.0
+      },
+      {
+        "query_es": "¿Qué fármacos bajan la presión arterial alta y previenen el ictus?",
+        "topic": "hypertension",
+        "rec1": 1.0,
+        "p3": 0.3333333333333333,
+        "mrr": 1.0
+      }
+    ],
+    "purpose": "aislar idioma vs dominio"
   },
   "cross_encoder": "ok",
   "delta_rec1": 0.666,
