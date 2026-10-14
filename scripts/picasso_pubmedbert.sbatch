@@ -22,6 +22,13 @@
 set -euo pipefail
 # módulo dentro del job (sbatch NO hereda los module load del login)
 module load python/3.11.4
+
+# Los nodos de cálculo NO tienen internet: HF estrictamente offline contra
+# la caché del home (pre-descargada en login con la MISMA versión de
+# transformers que corre aquí — 4.57.6, numpy<2).
+export HF_HUB_OFFLINE=1
+export TRANSFORMERS_OFFLINE=1
+export HF_HOME=$HOME/.cache/huggingface
 cd "$SLURM_SUBMIT_DIR"   # NUNCA dirname $0: en sbatch apunta al spool
 echo "GPU: ${CUDA_VISIBLE_DEVICES:-?} · $(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | head -1)"
 
