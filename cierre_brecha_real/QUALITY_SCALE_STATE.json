@@ -1,5 +1,5 @@
 {
-  "passes": 5,
+  "passes": 10,
   "history": [
     {
       "at": "2026-10-14T11:18:42",
@@ -27,6 +27,36 @@
     },
     {
       "at": "2026-10-14T12:20:29",
+      "delta_rec1": 0.666,
+      "improvement": true,
+      "cross_encoder": "ok"
+    },
+    {
+      "at": "2026-10-14T13:25:01",
+      "delta_rec1": 0.666,
+      "improvement": true,
+      "cross_encoder": "ok"
+    },
+    {
+      "at": "2026-10-14T16:12:12",
+      "delta_rec1": 0.666,
+      "improvement": true,
+      "cross_encoder": "ok"
+    },
+    {
+      "at": "2026-10-14T16:15:25",
+      "delta_rec1": 0.666,
+      "improvement": true,
+      "cross_encoder": "ok"
+    },
+    {
+      "at": "2026-10-14T16:17:06",
+      "delta_rec1": 0.666,
+      "improvement": true,
+      "cross_encoder": "ok"
+    },
+    {
+      "at": "2026-10-14T16:20:24",
       "delta_rec1": 0.666,
       "improvement": true,
       "cross_encoder": "ok"

@@ -1,0 +1,8 @@
+{
+  "timestamp": "2026-10-14T16:04:04",
+  "n": 48399,
+  "corpus_hash": "863c457ef245c6fe",
+  "model": "microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract-fulltext@cuda:NVIDIA B200",
+  "device": "cuda",
+  "caveat": "PubMedBERT monolingual EN; consultas ES se tokenizan como subpalabras"
+}

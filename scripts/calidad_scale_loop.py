@@ -189,17 +189,27 @@ def main() -> int:
         bvecs = zb["vectors"]
         order_b = [by_pmid[pm] for pm in zb["pmids"]]
 
-        def embed_queries_biomed(queries):
-            import sys as _sys
-            _sys.path.insert(0, str(ROOT / "scripts"))
-            from scale_embeddings import load_embedder
-            fn, label, dev = load_embedder("torch")
-            if dev != "cuda":
-                return None, label
-            qv = fn([q for q, _ in queries])
-            return {q: qv[i] for i, (q, _) in enumerate(queries)}, label
-
-        qv_b, b_label = embed_queries_biomed(QUERIES)
+        # Consultas ES embebidas por PubMedBERT en la B200 (job/srun de
+        # Picasso): sin ellas, la vía biomédica queda DECLARADA no medible
+        # en local (el MBP no tiene torch). Mismo orden que QUERIES.
+        qnpz = DATA / f"query_embeddings_biomed_{corpus_hash}.npz"
+        if qnpz.exists():
+            zq = np.load(qnpz, allow_pickle=False)
+            qv_b = {str(q): zq["vectors"][i]
+                    for i, q in enumerate(zq["queries"])}
+            b_label = ("microsoft/BiomedNLP-PubMedBERT…@cuda:NVIDIA B200 "
+                       "(pool y queries)")
+        else:
+            def embed_queries_biomed(queries):
+                import sys as _sys
+                _sys.path.insert(0, str(ROOT / "scripts"))
+                from scale_embeddings import load_embedder
+                fn, label, dev = load_embedder("torch")
+                if dev != "cuda":
+                    return None, label
+                qv = fn([q for q, _ in queries])
+                return {q: qv[i] for i, (q, _) in enumerate(queries)}, label
+            qv_b, b_label = embed_queries_biomed(QUERIES)
         if qv_b is not None:
             def rank_biomed(query: str) -> list[int]:
                 top = np.argsort(-(bvecs @ qv_b[query]))[:10]

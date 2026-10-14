@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-14T12:20:29",
+  "timestamp": "2026-10-14T16:20:24",
   "corpus": {
     "n": 48399,
     "hash": "863c457ef245c6fe",
@@ -212,8 +212,84 @@
     ]
   },
   "biomedical": {
-    "status": "not_available",
-    "reason": "sin caché biomédica ni CUDA (generar con scale_embeddings.py --biomed en GPU; p.ej. Picasso B200) — DECLARADO, no medido"
+    "model": "microsoft/BiomedNLP-PubMedBERT…@cuda:NVIDIA B200 (pool y queries) (coseno puro)",
+    "rec1": 0.0,
+    "p3": 0.167,
+    "mrr": 0.184,
+    "queries": [
+      {
+        "query": "¿Qué medicamentos hacen eliminar azúcar por la orina en la diabetes tipo 2?",
+        "topic": "sglt2",
+        "rec1": 0.0,
+        "p3": 0.0,
+        "mrr": 0.0,
+        "top3_pmids": [
+          "39977159",
+          "41698137",
+          "39977088"
+        ]
+      },
+      {
+        "query": "¿Cuál es el fármaco oral de primera línea en la diabetes y cómo actúa en el hígado?",
+        "topic": "metformin",
+        "rec1": 0.0,
+        "p3": 0.0,
+        "mrr": 0.125,
+        "top3_pmids": [
+          "39977159",
+          "41698137",
+          "39977088"
+        ]
+      },
+      {
+        "query": "¿Qué tratamientos reducen los ingresos hospitalarios por fallo cardíaco descompensado?",
+        "topic": "heart_failure",
+        "rec1": 0.0,
+        "p3": 0.0,
+        "mrr": 0.14285714285714285,
+        "top3_pmids": [
+          "39977159",
+          "41698137",
+          "39977088"
+        ]
+      },
+      {
+        "query": "¿El cribado radiológico del pulmón disminuye la mortalidad por cáncer?",
+        "topic": "lung_screening",
+        "rec1": 0.0,
+        "p3": 0.0,
+        "mrr": 0.0,
+        "top3_pmids": [
+          "39977088",
+          "41698137",
+          "39977159"
+        ]
+      },
+      {
+        "query": "¿Cómo se controla la glucemia basal en la diabetes del adulto y sus complicaciones?",
+        "topic": "t2d_general",
+        "rec1": 0.0,
+        "p3": 0.3333333333333333,
+        "mrr": 0.3333333333333333,
+        "top3_pmids": [
+          "39977088",
+          "41698137",
+          "39977078"
+        ]
+      },
+      {
+        "query": "¿Qué fármacos bajan la presión arterial alta y previenen el ictus?",
+        "topic": "hypertension",
+        "rec1": 0.0,
+        "p3": 0.6666666666666666,
+        "mrr": 0.5,
+        "top3_pmids": [
+          "39977159",
+          "41698137",
+          "41698263"
+        ]
+      }
+    ]
   },
   "cross_encoder": "ok",
   "delta_rec1": 0.666,
