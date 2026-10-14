@@ -118,27 +118,30 @@ def main() -> int:
     rows, h = load_corpus()
     print(f"[embed] corpus: {len(rows)} abstracts · hash {h}")
     out = DATA / f"scale_embeddings_{h}.npz"
-    if out.exists():
+    cached = out.exists()
+    if cached:
         print(f"[embed] caché vigente: {out}")
-        return 0
 
     texts = [f"{r['title']}. {r['abstract']}" for r in rows]
     engine_used, model_label = None, None
-    if args.engine in ("auto", "torch"):
-        try:
-            vecs, model_label = embed_torch(texts)
-            engine_used = "torch"
-        except Exception as exc:
-            print(f"[embed] torch no disponible ({type(exc).__name__}) — "
-                  f"fallback ONNX/CPU DECLARADO")
-    if engine_used is None:
-        vecs = embed_fastembed(texts)
-        engine_used = "fastembed"
-        model_label = MODEL_LOCAL + " (local/ONNX — Picasso no usado o no disponible)"
+    if not cached:
+        # Cálculo principal SOLO si no hay caché (en Picasso con caché MiniLM
+        # vigente, esto se salta y el job va directo a la vía biomédica).
+        if args.engine in ("auto", "torch"):
+            try:
+                vecs, model_label = embed_torch(texts)
+                engine_used = "torch"
+            except Exception as exc:
+                print(f"[embed] torch no disponible ({type(exc).__name__}) — "
+                      f"fallback ONNX/CPU DECLARADO")
+        if engine_used is None:
+            vecs = embed_fastembed(texts)
+            engine_used = "fastembed"
+            model_label = MODEL_LOCAL + " (local/ONNX — Picasso no usado o no disponible)"
 
-    np.savez(out, vectors=vecs, pmids=np.array([r["pmid"] for r in rows]))
-
-    # Tercera vía biomédica (solo si hay CUDA): cache separada por hash
+    # Tercera vía biomédica (solo si hay CUDA): cache separada por hash.
+    # Corre ANTES del early-return para que un job con caché MiniLM vigente
+    # (p. ej. Picasso tras traer el npz local) sí compute la vía biomédica.
     if args.biomed:
         out_b = DATA / f"scale_embeddings_biomed_{h}.npz"
         if out_b.exists():
@@ -159,6 +162,10 @@ def main() -> int:
                 print(f"[embed] ✅ biomédico: {out_b}")
             else:
                 print("[embed] biomédico NO generado (sin CUDA) — DECLARADO")
+    if cached:
+        return 0
+
+    np.savez(out, vectors=vecs, pmids=np.array([r["pmid"] for r in rows]))
     (CBR / "EMBED_SCALE_RECEIPT.json").write_text(json.dumps({
         "timestamp": datetime.now().isoformat(timespec="seconds"),
         "n": len(rows), "corpus_hash": h, "engine": engine_used,

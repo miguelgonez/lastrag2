@@ -1,8 +1,11 @@
 #!/bin/bash
 #SBATCH --job-name=lastrag-pubmedbert
-#SBATCH --partition=gpu_partition        # ajustar al nombre real (sinfo)
+#SBATCH --partition=gpu_partition
+#SBATCH --qos=short                          # QOS de casa (≤120 min)
+#SBATCH --constraint=b200                    # features nodo: dgx,gpu,b200
 #SBATCH --gres=gpu:1                     # 1× B200 (180 GB HBM3e)
 #SBATCH --cpus-per-task=8
+#SBATCH --mem=32G
 #SBATCH --time=01:00:00                  # QOS short ≤120 min (gotcha casa)
 #SBATCH --output=pubmedbert_%j.log       # logs caen en cwd (gotcha casa)
 
@@ -17,7 +20,9 @@
 #       calidad_scale_loop.py en el MBP (la vía biomédica la detecta sola).
 
 set -euo pipefail
-cd "$SLURM_SUBMIT_DIR"
+# módulo dentro del job (sbatch NO hereda los module load del login)
+module load python/3.11.4
+cd "$SLURM_SUBMIT_DIR"   # NUNCA dirname $0: en sbatch apunta al spool
 echo "GPU: ${CUDA_VISIBLE_DEVICES:-?} · $(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | head -1)"
 
 # corpus: parquet → jsonl (el loop lee jsonl; si ya existe, se respeta)
@@ -38,7 +43,6 @@ except Exception as exc:
 PY
 
 # embeddings biomédicos (PubMedBERT en B200; fallback declarado si algo falla)
-cd "$(dirname "$0")/.." 2>/dev/null || true
-python3 scripts/scale_embeddings.py --engine torch --biomed
+python3 "$SLURM_SUBMIT_DIR/scripts/scale_embeddings.py" --engine torch --biomed
 
 echo "✅ si todo fue bien: recoger cierre_brecha_real/data/scale_embeddings_biomed_*.npz"

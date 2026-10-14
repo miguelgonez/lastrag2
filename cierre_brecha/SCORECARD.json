@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-14T11:26:45",
+  "timestamp": "2026-10-14T12:19:47",
   "compliance_ponderado": 1.0,
   "counts": {
     "DONE": 15,
@@ -114,6 +114,6 @@
       "evidence": "9 tests (6P/3B)"
     }
   },
-  "passes_verdes": 13,
+  "passes_verdes": 14,
   "prereg_sha256": "65bc31946f69325e951bee84dc41c3516863153ad1a02ee3eff324b445c3f0f6"
 }
