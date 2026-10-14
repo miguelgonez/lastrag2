@@ -149,3 +149,14 @@ constructor con etiqueta `embedding_model` en cada respuesta.
 
 **Claim limits:** nada de esto acredita calidad clínica, calidad semántica
 sobre corpus biomédico real, ni conformidad regulatoria.
+
+---
+
+## Notas conocidas
+
+- **Email residual en el historial**: un correo personal (Gmail) aparece
+  hardcodeado en commits antiguos de ambas ramas (demo NotebookLM). Se acepta
+  como exposición menor en un repositorio de código público. Eliminarlo
+  exigiría reescribir el historial (`git filter-repo` + force-push), lo que
+  rompería la cadena de hashes citada en los expedientes (incluido el pin T3
+  `4784462`). Decisión: dejarlo documentado y no reescribir.
