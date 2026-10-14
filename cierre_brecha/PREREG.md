@@ -40,3 +40,24 @@
 3. **Motor LangGraph intacto:** las capacidades nuevas entran como parámetros opcionales con defaults = comportamiento actual exacto.
 
 Sello: sha256 registrado en STATE.json al iniciar el bucle.
+
+---
+
+## Adenda 1 (14-oct-2026) — criterio honesto del 100% para CB-15
+
+Corrige el riesgo de 100%-falso identificado en la revisión externa (un
+env-var no puede sustituir capacidad). Regla vinculante desde esta adenda:
+
+1. CB-15 = DONE **sólo** si existe capacidad de visión REAL verificada por
+   código (`vision_available()` = import efectivo de Docling/TableFormer; un
+   env-var a lo sumo DESHABILITA, jamás habilita por afirmación).
+2. Además, la suite debe contener tests que **ejerciten la rama de visión**
+   (identificables por nombre) y que pasen sin depender del fallback. La
+   cascada declara cada salto de vía en `EXTRACTOR_EVENTS` (jamás silencioso).
+3. Sin capacidad o sin tests de la rama → CB-15 permanece PARTIAL y el bucle
+   NO puede reportar 100% (exit 75 con bloqueo declarado).
+4. Docling es la vía de visión por coherencia de proyecto (parser primario
+   declarado en pyproject.toml), no una dependencia nueva para cerrar score.
+
+Re-sellado deliberado: STATE.json actualizado con el sha del prereg
+adendado; el sha anterior (5ad4308b) queda en el historial de STATE.

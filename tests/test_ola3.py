@@ -118,3 +118,74 @@ def test_cb15_engine_multimodal_declared_permitted():
         "¿dónde está la tabla de dosis?"))  # hint exacto → ruta structural
     assert result["features"]["multimodal_boost"] is True
     assert result["evidence"][0]["kind"] == TABLE_KIND
+
+
+# ---------------- CB-15: rama de visión real (gate del 100%) ----------------
+
+def _make_pdf_bordered_table(tmp_path) -> str:
+    """PDF con tabla CON bordes (como las guías clínicas reales): es la
+    estructura que el modelo TableFormer de Docling reconoce de verdad."""
+    path = tmp_path / "guia_tabla_bordeada.pdf"
+    doc = fitz.open()
+    page = doc.new_page()
+    page.insert_text((72, 60), "Guía clínica de demostración", fontsize=14)
+    page.insert_text((72, 88), "Tabla 1: Dosis de metformina por función renal",
+                     fontsize=11)
+    rows = [("Estadio", "Dosis inicial", "Máximo"),
+            ("Normal", "500 mg", "2550 mg"),
+            ("Leve", "500 mg", "2000 mg"),
+            ("Moderada", "250 mg", "1000 mg")]
+    xs = [76, 206, 336, 466]
+    y0, row_h = 104, 22
+    for r, row in enumerate(rows):
+        y = y0 + r * row_h
+        for c, cell in enumerate(row):
+            page.insert_text((xs[c] + 6, y + 15), cell, fontsize=10)
+    # rejilla con bordes reales
+    n_rows = len(rows)
+    for x in xs:
+        page.draw_line((x, y0), (x, y0 + n_rows * row_h))
+    page.draw_line((xs[-1], y0), (xs[-1], y0 + n_rows * row_h))
+    for r in range(n_rows + 1):
+        y = y0 + r * row_h
+        page.draw_line((xs[0], y), (xs[-1], y))
+    page.insert_text((72, y0 + n_rows * row_h + 24),
+                     "Figura 1: Curva dosis-respuesta", fontsize=11)
+    doc.save(str(path))
+    doc.close()
+    return str(path)
+
+
+def test_cb15_vision_branch_real_permitted(tmp_path):
+    """Con capacidad docling real, la cascada extrae por TableFormer y lo
+    DECLARA (extractor=docling-tableformer-v1 + EXTRACTOR_EVENTS)."""
+    import pytest
+    from core.rag.multimodal import vision_available, last_extractor_events
+    if not vision_available():
+        pytest.skip("docling sin capacidad en este entorno — rama de visión "
+                    "declarada ausente (el bucle mantiene CB-15 PARTIAL)")
+    pdf = _make_pdf_bordered_table(tmp_path)
+    tables = extract_tables(pdf)
+    assert tables, "sin tablas"
+    assert tables[0].extractor == "docling-tableformer-v1"
+    assert any(e["event"] == "ok" and e.get("tables", 0) >= 1
+               for e in last_extractor_events())
+    flat = " ".join(" ".join(r) for r in tables[0].rows)
+    assert "2550" in flat  # contenido real de la tabla
+
+
+def test_cb15_env_var_never_fakes_vision_blocked(monkeypatch):
+    """ANTI-100%-FALSO: un env-var SIN capacidad real no activa la visión."""
+    import pytest
+    from core.rag.multimodal import vision_available
+    monkeypatch.setenv("LASTRAG_VISION_MODEL", "1")
+    if vision_available():
+        pytest.skip("docling presente aquí: no se puede simular su ausencia "
+                    "(el caso bloqueado se ejercita en el entorno sin docling)")
+    assert vision_available() is False
+
+
+def test_cb15_disabled_blocks_vision_blocked(monkeypatch):
+    from core.rag.multimodal import vision_available
+    monkeypatch.setenv("LASTRAG_VISION_DISABLED", "1")
+    assert vision_available() is False

@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-10-14T00:36:47",
-  "compliance_ponderado": 0.9667,
+  "timestamp": "2026-10-14T08:10:28",
+  "compliance_ponderado": 1.0,
   "counts": {
-    "DONE": 14,
-    "PARTIAL": 1,
+    "DONE": 15,
+    "PARTIAL": 0,
     "PENDING": 0,
     "FAILED": 0,
     "INCOMPLETE": 0,
@@ -109,12 +109,11 @@
     "CB-15": {
       "desc": "Multimodalidad (tablas/figuras)",
       "ola": "3",
-      "tests": 6,
-      "status": "PARTIAL",
-      "evidence": "6 tests (5P/1B)",
-      "declaration": "extracción posicional sin modelo de visión (etiquetado posicional-v1)"
+      "tests": 9,
+      "status": "DONE",
+      "evidence": "9 tests (6P/3B)"
     }
   },
-  "passes_verdes": 6,
-  "prereg_sha256": "5ad4308b5f53c887646d9f691366cf27a3339eeb0a6b3b78441e7781239a16f0"
+  "passes_verdes": 8,
+  "prereg_sha256": "65bc31946f69325e951bee84dc41c3516863153ad1a02ee3eff324b445c3f0f6"
 }

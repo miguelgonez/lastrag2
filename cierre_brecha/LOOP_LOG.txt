@@ -1,13 +1,14 @@
-✅ suite completa VERDE: 77 passed, 1 warning in 6.23s
+✅ suite completa VERDE: 79 passed, 1 skipped, 13 warnings in 23.09s
+👁️  capacidad de visión real (docling/TableFormer): SÍ
 
-=== SCORECARD — cumplimiento ponderado: 97% (14 DONE + 1 PARTIAL de 15) ===
+=== SCORECARD — cumplimiento ponderado: 100% (15 DONE + 0 PARTIAL de 15) ===
 ✅ CB-2 [ola 1] Router iterativo (decompose/sufficiency/gap): DONE
 ✅ CB-3 [ola 1] RRF (port del control plane): DONE
 ✅ CB-4 [ola 1] Reranking clínico + cross-encoder ONNX: DONE
 ✅ CB-5 [ola 2] Evidence Pack 2.0 claim↔evidence: DONE
 ✅ CB-6 [ola 2] Conflict engine: DONE
 ✅ CB-7 [ola 2] Temporal RAG: DONE
-🟡 CB-15 [ola 3] Multimodalidad (tablas/figuras): PARTIAL — extracción posicional sin modelo de visión (etiquetado posicional-v1)
+✅ CB-15 [ola 3] Multimodalidad (tablas/figuras): DONE
 ✅ CB-14 [ola 4] Validación sintética causal (ground truth): DONE
 ✅ CB-8 [ola 4] Causal RAG + CausalGate: DONE
 ✅ CB-12 [ola 5] Failure Graph con coste medido: DONE
@@ -17,4 +18,4 @@
 ✅ CB-11 [ola base] Soberanía + fail-closed: DONE
 ✅ CB-9 [ola base] Pipeline E2E + audit trail: DONE
 
-Pasadas verdes consecutivas: 6/2
+Pasadas verdes consecutivas: 8/2

@@ -1,5 +1,5 @@
 {
-  "passes": 6,
+  "passes": 8,
   "history": [
     {
       "at": "2026-10-13T17:14:07",
@@ -110,10 +110,38 @@
         "BASELINE": 0
       },
       "problems": []
+    },
+    {
+      "at": "2026-10-14T08:08:27",
+      "duration_s": 112.7,
+      "compliance": 1.0,
+      "counts": {
+        "DONE": 15,
+        "PARTIAL": 0,
+        "PENDING": 0,
+        "FAILED": 0,
+        "INCOMPLETE": 0,
+        "BASELINE": 0
+      },
+      "problems": []
+    },
+    {
+      "at": "2026-10-14T08:10:28",
+      "duration_s": 119.1,
+      "compliance": 1.0,
+      "counts": {
+        "DONE": 15,
+        "PARTIAL": 0,
+        "PENDING": 0,
+        "FAILED": 0,
+        "INCOMPLETE": 0,
+        "BASELINE": 0
+      },
+      "problems": []
     }
   ],
-  "prereg_sha256": "5ad4308b5f53c887646d9f691366cf27a3339eeb0a6b3b78441e7781239a16f0",
-  "sealed_at": "2026-10-13T17:13:06",
+  "prereg_sha256": "65bc31946f69325e951bee84dc41c3516863153ad1a02ee3eff324b445c3f0f6",
+  "sealed_at": "2026-10-14 (adenda 1)",
   "last_verdicts": {
     "CB-1": {
       "desc": "Triple RAG",
@@ -213,10 +241,12 @@
     "CB-15": {
       "desc": "Multimodalidad (tablas/figuras)",
       "ola": "3",
-      "tests": 6,
-      "status": "PARTIAL",
-      "evidence": "6 tests (5P/1B)",
-      "declaration": "extracción posicional sin modelo de visión (etiquetado posicional-v1)"
+      "tests": 9,
+      "status": "DONE",
+      "evidence": "9 tests (6P/3B)"
     }
-  }
+  },
+  "prereg_history": [
+    "5ad4308b5f53c887646d9f691366cf27a3339eeb0a6b3b78441e7781239a16f0"
+  ]
 }

@@ -13,13 +13,85 @@ La calidad de esta extracción queda etiquetada como `posicional-v1`.
 
 from __future__ import annotations
 
+import os
 import re
 from dataclasses import dataclass, field
+
+# Declaraciones de la cascada de extracción (jamás fallback silencioso):
+# cada intento de vía queda registrado aquí; los tests lo comprueban.
+EXTRACTOR_EVENTS: list[dict] = []
+
+
+def last_extractor_events() -> list[dict]:
+    return list(EXTRACTOR_EVENTS)
 
 from ..backends.base import EvidenceChunk
 
 TABLE_KIND = "table"
-TABLE_EXTRACTOR_VERSION = "find-tables-v1 (detector PyMuPDF) + posicional-fallback"
+TABLE_EXTRACTOR_VERSION = "cascada: docling-tableformer (visión real, si hay capacidad) → find-tables-v1 → posicional-v1"
+
+
+def vision_available() -> bool:
+    """Capacidad REAL de extracción con modelo de visión (Docling/TableFormer).
+
+    ANTI-100%-FALSO: una variable de entorno NUNCA sustituye la capacidad —
+    como mucho deshabilita (LASTRAG_VISION_DISABLED=1). La capacidad se
+    comprueba importando el motor real; sin import no hay visión.
+    """
+    if os.getenv("LASTRAG_VISION_DISABLED"):
+        return False
+    try:
+        from docling.document_converter import DocumentConverter  # noqa: F401
+        return True
+    except Exception:
+        return False
+
+
+def _extract_tables_docling(pdf_path: str, max_pages: int = 50) -> list[TableBlock]:
+    """Extracción con modelo REAL de estructura de tablas (TableFormer vía
+    Docling, parser primario declarado del proyecto). Descarga sus modelos
+    ONNX en el primer uso. Cada tabla lleva extractor='docling-tableformer-v1'."""
+    import fitz
+    from docling.document_converter import DocumentConverter
+
+    EXTRACTOR_EVENTS.append({"extractor": "docling-tableformer-v1",
+                             "event": "attempt", "path": pdf_path})
+    converter = DocumentConverter()
+    result = converter.convert(pdf_path)
+    tables: list[TableBlock] = []
+    with fitz.open(pdf_path) as doc:
+        for item in result.document.tables:
+            try:
+                page_no = int(item.prov[0].pageno) if item.prov else 1
+            except Exception:
+                page_no = 1
+            if page_no > max_pages:
+                continue
+            try:
+                df = item.export_to_dataframe()
+                rows = [[("" if c is None else str(c)) for c in row]
+                        for row in df.values.tolist()]
+            except Exception:
+                rows = []
+            rows = [r for r in rows if any(c.strip() for c in r)]
+            if len(rows) < 2:
+                continue
+            caption = ""
+            try:
+                page = doc[page_no - 1]
+                bbox = item.prov[0].bbox if item.prov else None
+                for b in sorted(page.get_text("blocks"), key=lambda b: b[1]):
+                    if bbox and b[3] <= bbox[1] + 2 and \
+                            _TABLE_CAPTION_RE.match(b[4].strip()):
+                        caption = b[4].strip()
+                        break
+            except Exception:
+                pass
+            tables.append(TableBlock(page=page_no, caption=caption, rows=rows,
+                                     extractor="docling-tableformer-v1"))
+    EXTRACTOR_EVENTS.append({"extractor": "docling-tableformer-v1",
+                             "event": "ok", "tables": len(tables)})
+    return tables
 FIGURE_KIND = "figure"
 MULTIMODAL_HINTS = ("tabla", "cuadro", "figura", "gráfico", "grafico", "imagen")
 
@@ -32,6 +104,7 @@ class TableBlock:
     page: int
     caption: str
     rows: list[list[str]] = field(default_factory=list)
+    extractor: str = "unknown"
 
     def serialize(self) -> str:
         head = f"[TABLA · p.{self.page}] {self.caption}" if self.caption \
@@ -153,11 +226,24 @@ def _extract_tables_positional(pdf_path: str, max_pages: int = 50) -> list[Table
 
 
 def extract_tables(pdf_path: str, max_pages: int = 50) -> list[TableBlock]:
-    """Estrategia auto: detector real de PyMuPDF; si no encuentra nada,
-    fallback posicional. La vía usada es parte del alcance declarado
-    (TABLE_EXTRACTOR_VERSION)."""
+    """Cascada DECLARADA: docling (visión real si hay capacidad) →
+    find_tables → posicional. Todo salto de vía queda en EXTRACTOR_EVENTS;
+    jamás un fallback silencioso."""
+    if vision_available():
+        try:
+            tables = _extract_tables_docling(pdf_path, max_pages)
+            if tables:
+                return tables
+            EXTRACTOR_EVENTS.append({"extractor": "docling-tableformer-v1",
+                                     "event": "empty_fallback_find_tables"})
+        except Exception as exc:
+            EXTRACTOR_EVENTS.append({"extractor": "docling-tableformer-v1",
+                                     "event": "error_fallback_find_tables",
+                                     "reason": f"{type(exc).__name__}"})
     tables = _extract_tables_detector(pdf_path, max_pages)
     if not tables:
+        EXTRACTOR_EVENTS.append({"extractor": "find-tables-v1",
+                                 "event": "empty_fallback_posicional"})
         tables = _extract_tables_positional(pdf_path, max_pages)
     return tables
 

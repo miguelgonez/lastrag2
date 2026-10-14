@@ -28,6 +28,9 @@ ROOT = Path(__file__).resolve().parents[1]
 CB = ROOT / "cierre_brecha"
 PY = ROOT / ".venv" / "bin" / "python"
 
+sys.path.insert(0, str(ROOT))
+from core.rag.multimodal import vision_available  # noqa: E402
+
 # --- Universo de 15 ítems (compliance table; ver PREREG y PLAN_CIERRE_BRECHA) ---
 ITEMS = {
     # id: (descripción, ola, selector pytest, estado base, nota)
@@ -119,6 +122,9 @@ def main() -> int:
         return 1
 
     # --- PASO 2: veredicto por ítem (fuente de verdad = tests) ---
+    vision_ok = vision_available()
+    log(f"👁️  capacidad de visión real (docling/TableFormer): "
+        f"{'SÍ' if vision_ok else 'NO'}")
     verdicts: dict[str, dict] = {}
     problems: list[str] = []
     for item, (desc, ola, selector) in ITEMS.items():
@@ -146,9 +152,23 @@ def main() -> int:
                 v.update(status="DONE",
                          evidence=f"{len(ids)} tests "
                                   f"({len(permitted)}P/{len(blocked)}B)")
-        if item in PARTIAL_BY_DECLARATION and v["status"] == "DONE":
-            v["status"] = "PARTIAL"
-            v["declaration"] = PARTIAL_BY_DECLARATION[item]
+        if item == "CB-15" and v.get("status") == "DONE":
+            # Gate honesto del 100%: DONE sólo con capacidad de visión REAL
+            # (import docling/TableFormer) Y tests que ejerzan esa rama.
+            # Un env-var JAMÁS sustituye la capacidad (anti-100%-falso).
+            if not vision_ok:
+                v["status"] = "PARTIAL"
+                v["declaration"] = ("sin modelo de visión con capacidad real "
+                                    "(docling/TableFormer no importable); "
+                                    "cascada declarada find-tables→posicional")
+            else:
+                ids_all = collect_node_ids(selector)
+                vision_tests = [i for i in ids_all if "vision" in i]
+                if not vision_tests:
+                    v["status"] = "INCOMPLETE"
+                    v["reason"] = ("visión disponible pero sin tests que "
+                                   "ejerciten la rama de visión")
+                    problems.append(f"{item}: falta test de la rama visión")
         if item in EXTERNAL_DECLARATIONS:
             v["external"] = EXTERNAL_DECLARATIONS[item]
         verdicts[item] = v
@@ -184,11 +204,13 @@ def main() -> int:
 
     if problems:
         return 1
-    if state["passes"] >= 2:
-        log("🎯 N-VERDE alcanzado (2 pasadas consecutivas). "
-            "El bucle queda como comando de mantenimiento.")
+    if compliance >= 1.0 and state["passes"] >= 2:
+        log("🎯 100% (15/15 DONE) + N-VERDE. Bucle de mantenimiento en verde total.")
         return 0
-    return 75  # verde pero aún sin 2 pasadas: volver a ejecutar
+    if compliance < 1.0 and not vision_ok:
+        log("🟡 100% bloqueado por capacidad: falta visión real para CB-15 "
+            "(docling/TableFormer). Declarado, no inventado.")
+    return 75  # verde pero sin 100% o sin N-verde: volver a ejecutar
 
 
 def _persist(state, state_path, verdicts, log_lines, cb, t0, **extra):
