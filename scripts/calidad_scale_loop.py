@@ -39,7 +39,7 @@ QUERIES = [
 ]
 # Descriptor canónico por tema (gold MeSH-estricto del prereg)
 MESH_GOLD = {
-    "sglt2": "Sodium-Glucose Transporter Inhibitors",
+    "sglt2": "Sodium-Glucose Transporter 2 Inhibitors",
     "metformin": "Metformin",
     "heart_failure": "Heart Failure",
     "lung_screening": "Lung Neoplasms",

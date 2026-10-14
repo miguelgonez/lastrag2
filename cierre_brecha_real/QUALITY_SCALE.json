@@ -1,0 +1,222 @@
+{
+  "timestamp": "2026-10-14T11:19:49",
+  "corpus": {
+    "n": 48399,
+    "hash": "863c457ef245c6fe",
+    "source": "PubMed 5 años, 4 temas × 12.500 (PREREG_SCALE)"
+  },
+  "gold": {
+    "primary": "MeSH-estricto por descriptor canónico",
+    "por_tema": {
+      "sglt2": {
+        "sourcing": 9358,
+        "mesh_stricto": 6451,
+        "cobertura": 0.689,
+        "gold_usado": "mesh_stricto"
+      },
+      "metformin": {
+        "sourcing": 3136,
+        "mesh_stricto": 3136,
+        "cobertura": 1.0,
+        "gold_usado": "mesh_stricto"
+      },
+      "heart_failure": {
+        "sourcing": 9696,
+        "mesh_stricto": 9555,
+        "cobertura": 0.985,
+        "gold_usado": "mesh_stricto"
+      },
+      "lung_screening": {
+        "sourcing": 5547,
+        "mesh_stricto": 5485,
+        "cobertura": 0.989,
+        "gold_usado": "mesh_stricto"
+      },
+      "t2d_general": {
+        "sourcing": 10535,
+        "mesh_stricto": 10535,
+        "cobertura": 1.0,
+        "gold_usado": "mesh_stricto"
+      },
+      "hypertension": {
+        "sourcing": 10127,
+        "mesh_stricto": 8186,
+        "cobertura": 0.808,
+        "gold_usado": "mesh_stricto"
+      }
+    },
+    "fallback_declared": []
+  },
+  "embeddings": {
+    "engine": "fastembed",
+    "model": "paraphrase-multilingual-minilm-onnx-v1 (local/ONNX — Picasso no usado o no disponible)"
+  },
+  "baseline": {
+    "model": "hashing-dev (coseno puro, subm. 4k)",
+    "rec1": 0.167,
+    "p3": 0.167,
+    "mrr": 0.329,
+    "queries": [
+      {
+        "query": "¿Qué medicamentos hacen eliminar azúcar por la orina en la diabetes tipo 2?",
+        "topic": "sglt2",
+        "rec1": 0.0,
+        "p3": 0.3333333333333333,
+        "mrr": 0.5,
+        "top3_pmids": [
+          "35667400",
+          "42036156",
+          "39343702"
+        ]
+      },
+      {
+        "query": "¿Cuál es el fármaco oral de primera línea en la diabetes y cómo actúa en el hígado?",
+        "topic": "metformin",
+        "rec1": 0.0,
+        "p3": 0.0,
+        "mrr": 0.0,
+        "top3_pmids": [
+          "37524409",
+          "38146719",
+          "35893924"
+        ]
+      },
+      {
+        "query": "¿Qué tratamientos reducen los ingresos hospitalarios por fallo cardíaco descompensado?",
+        "topic": "heart_failure",
+        "rec1": 0.0,
+        "p3": 0.0,
+        "mrr": 0.14285714285714285,
+        "top3_pmids": [
+          "34725898",
+          "41863666",
+          "37978893"
+        ]
+      },
+      {
+        "query": "¿El cribado radiológico del pulmón disminuye la mortalidad por cáncer?",
+        "topic": "lung_screening",
+        "rec1": 1.0,
+        "p3": 0.3333333333333333,
+        "mrr": 1.0,
+        "top3_pmids": [
+          "35114386",
+          "36878815",
+          "34791967"
+        ]
+      },
+      {
+        "query": "¿Cómo se controla la glucemia basal en la diabetes del adulto y sus complicaciones?",
+        "topic": "t2d_general",
+        "rec1": 0.0,
+        "p3": 0.3333333333333333,
+        "mrr": 0.3333333333333333,
+        "top3_pmids": [
+          "37191704",
+          "37829225",
+          "37935388"
+        ]
+      },
+      {
+        "query": "¿Qué fármacos bajan la presión arterial alta y previenen el ictus?",
+        "topic": "hypertension",
+        "rec1": 0.0,
+        "p3": 0.0,
+        "mrr": 0.0,
+        "top3_pmids": [
+          "35417174",
+          "39404844",
+          "35199402"
+        ]
+      }
+    ]
+  },
+  "real": {
+    "model": "MiniLM-ONNX + clinical + cross-encoder",
+    "rec1": 0.833,
+    "p3": 0.889,
+    "mrr": 0.917,
+    "queries": [
+      {
+        "query": "¿Qué medicamentos hacen eliminar azúcar por la orina en la diabetes tipo 2?",
+        "topic": "sglt2",
+        "rec1": 0.0,
+        "p3": 0.6666666666666666,
+        "mrr": 0.5,
+        "top3_pmids": [
+          "41595617",
+          "36260389",
+          "39207490"
+        ]
+      },
+      {
+        "query": "¿Cuál es el fármaco oral de primera línea en la diabetes y cómo actúa en el hígado?",
+        "topic": "metformin",
+        "rec1": 1.0,
+        "p3": 0.6666666666666666,
+        "mrr": 1.0,
+        "top3_pmids": [
+          "34758497",
+          "40450157",
+          "37088764"
+        ]
+      },
+      {
+        "query": "¿Qué tratamientos reducen los ingresos hospitalarios por fallo cardíaco descompensado?",
+        "topic": "heart_failure",
+        "rec1": 1.0,
+        "p3": 1.0,
+        "mrr": 1.0,
+        "top3_pmids": [
+          "42550328",
+          "39216808",
+          "41056593"
+        ]
+      },
+      {
+        "query": "¿El cribado radiológico del pulmón disminuye la mortalidad por cáncer?",
+        "topic": "lung_screening",
+        "rec1": 1.0,
+        "p3": 1.0,
+        "mrr": 1.0,
+        "top3_pmids": [
+          "40344812",
+          "38536982",
+          "35306638"
+        ]
+      },
+      {
+        "query": "¿Cómo se controla la glucemia basal en la diabetes del adulto y sus complicaciones?",
+        "topic": "t2d_general",
+        "rec1": 1.0,
+        "p3": 1.0,
+        "mrr": 1.0,
+        "top3_pmids": [
+          "42814765",
+          "34939824",
+          "41659334"
+        ]
+      },
+      {
+        "query": "¿Qué fármacos bajan la presión arterial alta y previenen el ictus?",
+        "topic": "hypertension",
+        "rec1": 1.0,
+        "p3": 1.0,
+        "mrr": 1.0,
+        "top3_pmids": [
+          "35652337",
+          "39064756",
+          "40451791"
+        ]
+      }
+    ]
+  },
+  "cross_encoder": "ok",
+  "delta_rec1": 0.666,
+  "gate": "Δrec@1≥0.15 o MRR>base+0.08",
+  "improvement_demonstrated": true,
+  "claim_limits": [
+    "recuperación sobre abstracts públicos; NO relevancia clínica fina, validez clínica ni generación",
+    "el hardware (local o B200) no aporta calidad clínica"
+  ]
+}

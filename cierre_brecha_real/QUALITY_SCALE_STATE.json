@@ -1,0 +1,17 @@
+{
+  "passes": 2,
+  "history": [
+    {
+      "at": "2026-10-14T11:18:42",
+      "delta_rec1": 0.666,
+      "improvement": true,
+      "cross_encoder": "ok"
+    },
+    {
+      "at": "2026-10-14T11:19:49",
+      "delta_rec1": 0.666,
+      "improvement": true,
+      "cross_encoder": "ok"
+    }
+  ]
+}

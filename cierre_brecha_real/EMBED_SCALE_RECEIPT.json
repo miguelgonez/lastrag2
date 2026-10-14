@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-10-14T11:05:49",
+  "n": 48399,
+  "corpus_hash": "863c457ef245c6fe",
+  "engine": "fastembed",
+  "model": "paraphrase-multilingual-minilm-onnx-v1 (local/ONNX — Picasso no usado o no disponible)",
+  "cache": "/Users/yeye/Documents/06_DESARROLLO_TECNOLÓGICO/Entorno_Desarrollo/py/Py_LastRAG_Index/cierre_brecha_real/data/scale_embeddings_863c457ef245c6fe.npz",
+  "claim": "cómputo de embeddings; el hardware no aporta calidad clínica"
+}
