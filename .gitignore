@@ -19,3 +19,9 @@ build/
 .DS_Store
 
 node_modules/
+
+# Escala 50k: artefactos grandes regenerables (jsonl >100MB excede GitHub;
+# npz de embeddings se recalcula por hash de corpus con scale_embeddings.py)
+cierre_brecha_real/data/pubmed_scale.jsonl
+cierre_brecha_real/data/scale_state.json
+cierre_brecha_real/data/scale_embeddings_*.npz

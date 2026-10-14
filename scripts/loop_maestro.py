@@ -77,6 +77,21 @@ def main() -> int:
     else:
         info("[3] Calidad corpus real: sin piloto descargado (skip declarado)")
 
+    # 3b) Escala 50 k (si el corpus de escala existe; prereg propio)
+    scale_ok, scale_delta = None, None
+    scale_script = ROOT / "scripts" / "calidad_scale_loop.py"
+    if scale_script.exists() and (CB_REAL / "data" / "pubmed_scale.jsonl").exists():
+        info("[3b] Loop de calidad ESCALA 50k (gold MeSH-estricto)")
+        rc, out = run([str(PY), str(scale_script)])
+        info("\n".join(out.strip().splitlines()[-4:]))
+        scale_ok = rc == 0
+        receipt = CB_REAL / "QUALITY_SCALE.json"
+        if receipt.exists():
+            scale_delta = json.loads(receipt.read_text()).get("delta_rec1")
+            info(f"    Δ rec@1 escala (recibo) = {scale_delta}")
+    else:
+        info("[3b] Escala 50k: sin corpus de escala descargado (skip declarado)")
+
     # 4) DeltaBackend (solo si hay Delta Y pyspark en ESTE entorno)
     delta_ok = None
     if os.getenv("DELTA_PATH"):
@@ -101,6 +116,7 @@ def main() -> int:
     info(f"Olas (suite):            ✅")
     info(f"Scorecard 15/15 + N-verde: {'✅' if scorecard_100 else '🟡'}")
     info(f"Calidad corpus real:     {'✅ Δ=' + str(quality_delta) if quality_ok else '🟡 skip/sin mejora'}")
+    info(f"Escala 50k (MeSH-strict): {'✅ Δ=' + str(scale_delta) if scale_ok else '🟡 skip' if scale_ok is None else '⚠️ pendiente/sin mejora'}")
     info(f"DeltaBackend:            {'✅' if delta_ok else '🟡 skip' if delta_ok is None else '⚠️'}")
 
     summary = {
@@ -109,6 +125,8 @@ def main() -> int:
         "scorecard_100": scorecard_100,
         "calidad_real_ok": quality_ok,
         "calidad_delta_rec1": quality_delta,
+        "escala_50k_ok": scale_ok,
+        "escala_delta_rec1": scale_delta,
         "delta_backend_ok": delta_ok,
         "claim_limits": "intactos — nada de validez clínica ni calidad "
                         "semántica sobre corpus real amplio; el Δ del piloto "
