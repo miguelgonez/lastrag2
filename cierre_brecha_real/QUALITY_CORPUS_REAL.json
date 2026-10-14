@@ -1,0 +1,138 @@
+{
+  "timestamp": "2026-10-14T08:39:23",
+  "corpus": {
+    "n": 1095,
+    "hash": "8853e2ea2c8d43e0",
+    "source": "PubMed E-utilities, 5 años, 4 temas",
+    "gold": "silver-gold por sourcing (PREREG_QUALITY.md)"
+  },
+  "claim_limits": [
+    "recuperación cross-lingual ES→EN sobre abstracts públicos con gold proxy",
+    "NO validez clínica, NO relevancia clínica fina, NO generación"
+  ],
+  "baseline": {
+    "model": "local-hash-ngram-256-v1 (coseno puro)",
+    "n_queries": 4,
+    "rec1": 0.25,
+    "p3": 0.25,
+    "mrr": 0.333,
+    "queries": [
+      {
+        "query": "¿Qué medicamentos hacen eliminar azúcar por la orina en la diabetes tipo 2?",
+        "gold": "sglt2",
+        "rec1": 0.0,
+        "p3": 0.0,
+        "mrr": 0.0,
+        "top1_topic": "metformin",
+        "top3": [
+          "42036156",
+          "40956165",
+          "35750976"
+        ]
+      },
+      {
+        "query": "¿Cuál es el fármaco oral de primera línea en la diabetes y cómo actúa en el hígado?",
+        "gold": "metformin",
+        "rec1": 1.0,
+        "p3": 0.6666666666666666,
+        "mrr": 1.0,
+        "top1_topic": "metformin",
+        "top3": [
+          "39738706",
+          "41098669",
+          "36564817"
+        ]
+      },
+      {
+        "query": "¿Qué tratamientos reducen los ingresos hospitalarios por fallo cardíaco descompensado?",
+        "gold": "heart_failure",
+        "rec1": 0.0,
+        "p3": 0.0,
+        "mrr": 0.0,
+        "top1_topic": "metformin",
+        "top3": [
+          "34781797",
+          "38862305",
+          "35157302"
+        ]
+      },
+      {
+        "query": "¿El cribado radiológico del pulmón disminuye la mortalidad por cáncer?",
+        "gold": "lung_screening",
+        "rec1": 0.0,
+        "p3": 0.3333333333333333,
+        "mrr": 0.3333333333333333,
+        "top1_topic": "metformin",
+        "top3": [
+          "34845738",
+          "41031893",
+          "34257020"
+        ]
+      }
+    ]
+  },
+  "real": {
+    "model": "MiniLM-ONNX + clinical_rerank",
+    "n_queries": 4,
+    "rec1": 1.0,
+    "p3": 1.0,
+    "mrr": 1.0,
+    "queries": [
+      {
+        "query": "¿Qué medicamentos hacen eliminar azúcar por la orina en la diabetes tipo 2?",
+        "gold": "sglt2",
+        "rec1": 1.0,
+        "p3": 1.0,
+        "mrr": 1.0,
+        "top1_topic": "sglt2",
+        "top3": [
+          "41531286",
+          "35316484",
+          "39078140"
+        ]
+      },
+      {
+        "query": "¿Cuál es el fármaco oral de primera línea en la diabetes y cómo actúa en el hígado?",
+        "gold": "metformin",
+        "rec1": 1.0,
+        "p3": 1.0,
+        "mrr": 1.0,
+        "top1_topic": "metformin",
+        "top3": [
+          "38138975",
+          "38568468",
+          "41067166"
+        ]
+      },
+      {
+        "query": "¿Qué tratamientos reducen los ingresos hospitalarios por fallo cardíaco descompensado?",
+        "gold": "heart_failure",
+        "rec1": 1.0,
+        "p3": 1.0,
+        "mrr": 1.0,
+        "top1_topic": "heart_failure",
+        "top3": [
+          "36344739",
+          "38780209",
+          "34043809"
+        ]
+      },
+      {
+        "query": "¿El cribado radiológico del pulmón disminuye la mortalidad por cáncer?",
+        "gold": "lung_screening",
+        "rec1": 1.0,
+        "p3": 1.0,
+        "mrr": 1.0,
+        "top1_topic": "lung_screening",
+        "top3": [
+          "38195644",
+          "39875190",
+          "41521115"
+        ]
+      }
+    ]
+  },
+  "cross_encoder": "ok",
+  "delta_rec1": 0.75,
+  "improvement_demonstrated": true
+}
