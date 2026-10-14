@@ -1,20 +1,27 @@
-=== Loop maestro · 2026-10-14T09:26:25 ===
+=== Loop maestro · 2026-10-14T11:20:16 ===
 [1] Suite de las 5 olas (100 % arquitectónico)
-✅ Suite olas verde: 79 passed, 2 skipped, 13 warnings in 21.74s
+✅ Suite olas verde: 79 passed, 2 skipped, 13 warnings in 36.46s
 [2] Scorecard de cierre (re-acreditación)
 === SCORECARD — cumplimiento ponderado: 100% (15 DONE + 0 PARTIAL de 15) ===
-Pasadas verdes consecutivas: 12/2
+Pasadas verdes consecutivas: 13/2
 🎯 100% (15/15 DONE) + N-VERDE. Bucle de mantenimiento en verde total.
 [3] Loop de calidad corpus real
 baseline  rec@1=0.250 p@3=0.250 MRR=0.333
 real      rec@1=1.000 p@3=1.000 MRR=1.000 Δrec@1=+0.750
-cross-encoder: ok · mejora: True · N: 4/2
+cross-encoder: ok · mejora: True · N: 5/2
 🎯 corpus REAL: mejora + N-verde
     Δ recall@1 (recibo) = 0.75
+[3b] Loop de calidad ESCALA 50k (gold MeSH-estricto)
+baseline rec@1=0.167 p@3=0.167 MRR=0.329
+real     rec@1=0.833 p@3=0.889 MRR=0.917 Δ=+0.666
+cross: ok · mejora: True · N: 3/2
+🎯 ESCALA 50k: mejora + N-verde (gold MeSH-estricto)
+    Δ rec@1 escala (recibo) = 0.666
 [4] DeltaBackend: DELTA_PATH no definido (skip declarado)
 
 === RESUMEN ===
 Olas (suite):            ✅
 Scorecard 15/15 + N-verde: ✅
 Calidad corpus real:     ✅ Δ=0.75
+Escala 50k (MeSH-strict): ✅ Δ=0.666
 DeltaBackend:            🟡 skip

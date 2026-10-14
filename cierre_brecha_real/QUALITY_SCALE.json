@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-14T11:19:49",
+  "timestamp": "2026-10-14T12:16:04",
   "corpus": {
     "n": 48399,
     "hash": "863c457ef245c6fe",
@@ -211,12 +211,17 @@
       }
     ]
   },
+  "biomedical": {
+    "status": "not_available",
+    "reason": "sin caché biomédica ni CUDA (generar con scale_embeddings.py --biomed en GPU; p.ej. Picasso B200) — DECLARADO, no medido"
+  },
   "cross_encoder": "ok",
   "delta_rec1": 0.666,
   "gate": "Δrec@1≥0.15 o MRR>base+0.08",
   "improvement_demonstrated": true,
   "claim_limits": [
     "recuperación sobre abstracts públicos; NO relevancia clínica fina, validez clínica ni generación",
-    "el hardware (local o B200) no aporta calidad clínica"
+    "el hardware (local o B200) no aporta calidad clínica",
+    "tercera vía biomédica mide recuperación; no validez clínica; PubMedBERT monolingual EN (consultas ES por subpalabras, declarado)"
   ]
 }

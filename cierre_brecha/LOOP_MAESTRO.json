@@ -1,9 +1,11 @@
 {
-  "timestamp": "2026-10-14T09:53:15",
+  "timestamp": "2026-10-14T11:29:01",
   "olas_suite": true,
   "scorecard_100": true,
   "calidad_real_ok": true,
   "calidad_delta_rec1": 0.75,
+  "escala_50k_ok": true,
+  "escala_delta_rec1": 0.666,
   "delta_backend_ok": null,
   "claim_limits": "intactos — nada de validez clínica ni calidad semántica sobre corpus real amplio; el Δ del piloto usa silver-gold por sourcing"
 }

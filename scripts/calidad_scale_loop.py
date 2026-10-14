@@ -177,6 +177,43 @@ def main() -> int:
     real = evaluate(rank_real, "MiniLM-ONNX + clinical + cross-encoder",
                     rows, gold_report)
 
+    # ---- Tercera vía biomédica (PubMedBERT, solo si hay caché o CUDA) ----
+    biomed = None
+    npz_b = DATA / f"scale_embeddings_biomed_{corpus_hash}.npz"
+    try:
+        from scripts.scale_embeddings import load_embedder  # noqa
+    except Exception:
+        pass
+    if npz_b.exists():
+        zb = np.load(npz_b)
+        bvecs = zb["vectors"]
+        order_b = [by_pmid[pm] for pm in zb["pmids"]]
+
+        def embed_queries_biomed(queries):
+            import sys as _sys
+            _sys.path.insert(0, str(ROOT / "scripts"))
+            from scale_embeddings import load_embedder
+            fn, label, dev = load_embedder("torch")
+            if dev != "cuda":
+                return None, label
+            qv = fn([q for q, _ in queries])
+            return {q: qv[i] for i, (q, _) in enumerate(queries)}, label
+
+        qv_b, b_label = embed_queries_biomed(QUERIES)
+        if qv_b is not None:
+            def rank_biomed(query: str) -> list[int]:
+                top = np.argsort(-(bvecs @ qv_b[query]))[:10]
+                return [order_b[int(i)] for i in top]
+            biomed = evaluate(rank_biomed, f"{b_label} (coseno puro)", rows,
+                              gold_report)
+        else:
+            biomed = {"model": b_label, "status": "queries_no_embeddables"}
+    else:
+        biomed = {"status": "not_available",
+                  "reason": "sin caché biomédica ni CUDA (generar con "
+                            "scale_embeddings.py --biomed en GPU; p.ej. "
+                            "Picasso B200) — DECLARADO, no medido"}
+
     delta = real["rec1"] - baseline["rec1"]
     improvement = delta >= 0.15 or (real["mrr"] > baseline["mrr"] + 0.08)
 
@@ -195,12 +232,16 @@ def main() -> int:
                                        if g["gold_usado"] != "mesh_stricto"]},
         "embeddings": {"engine": receipt_emb.get("engine"),
                        "model": receipt_emb.get("model")},
-        "baseline": baseline, "real": real, "cross_encoder": cross_status,
+        "baseline": baseline, "real": real, "biomedical": biomed,
+        "cross_encoder": cross_status,
         "delta_rec1": round(delta, 3), "gate": "Δrec@1≥0.15 o MRR>base+0.08",
         "improvement_demonstrated": improvement,
         "claim_limits": ["recuperación sobre abstracts públicos; NO relevancia "
                          "clínica fina, validez clínica ni generación",
-                         "el hardware (local o B200) no aporta calidad clínica"],
+                         "el hardware (local o B200) no aporta calidad clínica",
+                         "tercera vía biomédica mide recuperación; no validez "
+                         "clínica; PubMedBERT monolingual EN (consultas ES por "
+                         "subpalabras, declarado)"],
     }
     (CBR / "QUALITY_SCALE.json").write_text(json.dumps(receipt, indent=2,
                                                        ensure_ascii=False))
