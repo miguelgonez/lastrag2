@@ -1,0 +1,26 @@
+name: suite
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Caché de modelos Docling (visión real TableFormer)
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/docling
+          key: docling-models-${{ runner.os }}
+      - name: Dependencias (motor + test + docling para la rama de visión)
+        run: |
+          pip install langgraph pymupdf python-dotenv pytest \
+                      qdrant-client neo4j docling
+      - name: Suite completa (los tests que exigen modelos no disponibles
+          se declaran como skip, nunca éxito falso)
+        run: python -m pytest tests/ -q

@@ -1,0 +1,14 @@
+{
+  "downloaded_at": "2026-10-14T10:47:46",
+  "n_abstracts": 48399,
+  "per_topic": {
+    "sglt2": 9358,
+    "metformin": 3136,
+    "heart_failure": 9696,
+    "lung_screening": 5547,
+    "t2d_general": 10535,
+    "hypertension": 10127
+  },
+  "format": "parquet+jsonl",
+  "gold": "MeSH-estricto en el loop (PREREG_SCALE.md); descriptor por tema declarado allí"
+}

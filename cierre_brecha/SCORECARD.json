@@ -1,0 +1,119 @@
+{
+  "timestamp": "2026-10-14T12:19:47",
+  "compliance_ponderado": 1.0,
+  "counts": {
+    "DONE": 15,
+    "PARTIAL": 0,
+    "PENDING": 0,
+    "FAILED": 0,
+    "INCOMPLETE": 0,
+    "BASELINE": 0
+  },
+  "formula": "(DONE + 0.5*PARTIAL)/15",
+  "items": {
+    "CB-1": {
+      "desc": "Triple RAG",
+      "ola": "base",
+      "status": "DONE",
+      "evidence": "suite base verde + T3 51/51 (6-oct)"
+    },
+    "CB-9": {
+      "desc": "Pipeline E2E + audit trail",
+      "ola": "base",
+      "status": "DONE",
+      "evidence": "suite base verde + T3 51/51 (6-oct)"
+    },
+    "CB-10": {
+      "desc": "Ingesta sellada + hashes",
+      "ola": "base",
+      "status": "DONE",
+      "evidence": "suite base verde + T3 51/51 (6-oct)"
+    },
+    "CB-11": {
+      "desc": "Soberanía + fail-closed",
+      "ola": "base",
+      "status": "DONE",
+      "evidence": "suite base verde + T3 51/51 (6-oct)"
+    },
+    "CB-2": {
+      "desc": "Router iterativo (decompose/sufficiency/gap)",
+      "ola": "1",
+      "tests": 5,
+      "status": "DONE",
+      "evidence": "5 tests (3P/1B)"
+    },
+    "CB-3": {
+      "desc": "RRF (port del control plane)",
+      "ola": "1",
+      "tests": 4,
+      "status": "DONE",
+      "evidence": "4 tests (1P/2B)"
+    },
+    "CB-4": {
+      "desc": "Reranking clínico + cross-encoder ONNX",
+      "ola": "1",
+      "tests": 5,
+      "status": "DONE",
+      "evidence": "5 tests (2P/2B)"
+    },
+    "CB-5": {
+      "desc": "Evidence Pack 2.0 claim↔evidence",
+      "ola": "2",
+      "tests": 4,
+      "status": "DONE",
+      "evidence": "4 tests (3P/1B)"
+    },
+    "CB-6": {
+      "desc": "Conflict engine",
+      "ola": "2",
+      "tests": 4,
+      "status": "DONE",
+      "evidence": "4 tests (2P/2B)"
+    },
+    "CB-7": {
+      "desc": "Temporal RAG",
+      "ola": "2",
+      "tests": 4,
+      "status": "DONE",
+      "evidence": "4 tests (2P/2B)"
+    },
+    "CB-8": {
+      "desc": "Causal RAG + CausalGate",
+      "ola": "4",
+      "tests": 6,
+      "status": "DONE",
+      "evidence": "6 tests (3P/3B)"
+    },
+    "CB-14": {
+      "desc": "Validación sintética causal (ground truth)",
+      "ola": "4",
+      "tests": 4,
+      "status": "DONE",
+      "evidence": "4 tests (1P/1B)",
+      "external": "OMEGA-I2 con servicios reales del programa: dependencia externa (prestador sellado); aquí se acredita el benchmark sintético"
+    },
+    "CB-12": {
+      "desc": "Failure Graph con coste medido",
+      "ola": "5",
+      "tests": 6,
+      "status": "DONE",
+      "evidence": "6 tests (3P/3B)"
+    },
+    "CB-13": {
+      "desc": "Taxonomía de abstención",
+      "ola": "5",
+      "tests": 3,
+      "status": "DONE",
+      "evidence": "3 tests (2P/1B)"
+    },
+    "CB-15": {
+      "desc": "Multimodalidad (tablas/figuras)",
+      "ola": "3",
+      "tests": 9,
+      "status": "DONE",
+      "evidence": "9 tests (6P/3B)"
+    }
+  },
+  "passes_verdes": 14,
+  "prereg_sha256": "65bc31946f69325e951bee84dc41c3516863153ad1a02ee3eff324b445c3f0f6"
+}

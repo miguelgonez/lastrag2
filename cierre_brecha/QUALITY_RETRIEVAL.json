@@ -1,0 +1,126 @@
+{
+  "timestamp": "2026-10-14T08:24:34",
+  "corpus": "conjunto duro de paráfrasis (solapamiento léxico mínimo) — sintético ES",
+  "claim_limits": [
+    "NO valida calidad semántica sobre corpus biomédico real",
+    "NO valida calidad clínica ni utilidad terapéutica",
+    "Mide discriminación de paráfrasis controladas + efecto de rerankers (clínico determinista; cross-encoder ONNX si available)"
+  ],
+  "baseline": {
+    "embedding_model": "local-hash-ngram-256-v1 (sin rerank)",
+    "n_queries": 6,
+    "recall1": 0.333,
+    "recall3": 0.5,
+    "mrr": 0.492,
+    "queries": [
+      {
+        "query": "¿Qué ocurre con el azúcar en sangre al orinarla con los nuevos fármacos renales?",
+        "gold": "gold_hipogluc",
+        "top1": "d7",
+        "recall1": 0.0,
+        "recall3": 0.0,
+        "rr": 0.0
+      },
+      {
+        "query": "¿Qué complicación aguda metabólica se atribuye a los inhibidores del cotransportador renal?",
+        "gold": "gold_neo",
+        "top1": "d4",
+        "recall1": 0.0,
+        "recall3": 0.0,
+        "rr": 0.25
+      },
+      {
+        "query": "¿Qué beneficios hay para el corazón descompensado con los gliflozinas?",
+        "gold": "gold_cardio",
+        "top1": "gold_neo",
+        "recall1": 0.0,
+        "recall3": 0.0,
+        "rr": 0.2
+      },
+      {
+        "query": "¿Qué efecto tiene orinar azúcar con los inhibidores del transportador de sodio-glucosa?",
+        "gold": "gold_hipogluc",
+        "top1": "gold_hipogluc",
+        "recall1": 1.0,
+        "recall3": 1.0,
+        "rr": 1.0
+      },
+      {
+        "query": "¿Qué riesgo agudo de acidosis sin hiperglucemia se vincula a canagliflozina?",
+        "gold": "gold_neo",
+        "top1": "gold_hipogluc",
+        "recall1": 0.0,
+        "recall3": 1.0,
+        "rr": 0.5
+      },
+      {
+        "query": "¿Qué impacto tiene empagliflozina en las hospitalizaciones por fallo cardíaco?",
+        "gold": "gold_cardio",
+        "top1": "gold_cardio",
+        "recall1": 1.0,
+        "recall3": 1.0,
+        "rr": 1.0
+      }
+    ]
+  },
+  "real": {
+    "embedding_model": "paraphrase-multilingual-minilm-onnx-v1 + clinical_rerank",
+    "n_queries": 6,
+    "recall1": 0.833,
+    "recall3": 1.0,
+    "mrr": 0.917,
+    "queries": [
+      {
+        "query": "¿Qué ocurre con el azúcar en sangre al orinarla con los nuevos fármacos renales?",
+        "gold": "gold_hipogluc",
+        "top1": "gold_hipogluc",
+        "recall1": 1.0,
+        "recall3": 1.0,
+        "rr": 1.0
+      },
+      {
+        "query": "¿Qué complicación aguda metabólica se atribuye a los inhibidores del cotransportador renal?",
+        "gold": "gold_neo",
+        "top1": "gold_hipogluc",
+        "recall1": 0.0,
+        "recall3": 1.0,
+        "rr": 0.5
+      },
+      {
+        "query": "¿Qué beneficios hay para el corazón descompensado con los gliflozinas?",
+        "gold": "gold_cardio",
+        "top1": "gold_cardio",
+        "recall1": 1.0,
+        "recall3": 1.0,
+        "rr": 1.0
+      },
+      {
+        "query": "¿Qué efecto tiene orinar azúcar con los inhibidores del transportador de sodio-glucosa?",
+        "gold": "gold_hipogluc",
+        "top1": "gold_hipogluc",
+        "recall1": 1.0,
+        "recall3": 1.0,
+        "rr": 1.0
+      },
+      {
+        "query": "¿Qué riesgo agudo de acidosis sin hiperglucemia se vincula a canagliflozina?",
+        "gold": "gold_neo",
+        "top1": "gold_neo",
+        "recall1": 1.0,
+        "recall3": 1.0,
+        "rr": 1.0
+      },
+      {
+        "query": "¿Qué impacto tiene empagliflozina en las hospitalizaciones por fallo cardíaco?",
+        "gold": "gold_cardio",
+        "top1": "gold_cardio",
+        "recall1": 1.0,
+        "recall3": 1.0,
+        "rr": 1.0
+      }
+    ]
+  },
+  "cross_encoder": "ok",
+  "delta_recall1": 0.5,
+  "improvement_demonstrated": true
+}

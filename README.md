@@ -119,3 +119,33 @@ Pendiente (orden congelado en ROADMAP_FOUNDATION.md):
 3. Gate FOUNDATION-T3 = REAL_E2E_PASS; después benchmark (Wave 1, contra
    LastRAG-MD stable-v1.0) y sólo entonces features (Waves 2-6).
 4. Capa FastAPI completa + persistencia y reranking híbrido.
+
+---
+
+## Olas 1–5: cierre de brecha sobre el deck (rama `cierre-brecha-100`)
+
+Capacidades añadidas al motor con tests de contrato (caso permitido + caso
+bloqueado por control) y expediente sellado (`cierre_brecha/`):
+
+| Ola | Módulo | Qué aporta |
+|---|---|---|
+| 1 | `rag/fusion.py`, `rag/iterative.py`, `rag/rerank.py` | RRF (k=60) · router iterativo (descomposición → sufficiency gate → gap → reformulación acotada) · reranking clínico determinista + cross-encoder ONNX opcional |
+| 2 | `rag/pack.py`, `rag/conflict.py`, `rag/temporal.py` | Evidence Pack 2.0 (claims con spans verificables; el LLM recibe el objeto, no la nube de chunks) · Conflict Engine (4 relaciones, jamás promedia) · ventanas de validez + histórico + UNDATED |
+| 4 | `rag/causal.py` | jerarquía ASSOCIATION→CAUSAL_SUPPORTED · CausalGate: recomendación sin evidencia de intervención = abstención por código · benchmark sintético confusor/mediador/colisionador |
+| 5 | `rag/failure_graph.py` | modos de fallo con coste medido (ms) · taxonomía NO_EVIDENCE vs INSUFFICIENT_EVIDENCE |
+| 3 | `rag/multimodal.py` | extracción posicional de tablas/figuras (PyMuPDF, sin modelo de visión — PARTIAL declarado) + routing multimodal |
+
+**Estado (13-oct-2026):** 14/15 compromisos del deck DONE + 1 PARTIAL (97%
+ponderado); suite 75/75. Bucle de mantenimiento:
+
+```bash
+.venv/bin/python scripts/cierre_brecha_loop.py   # scorecard desde tests; exit 0/1/75
+.venv/bin/python scripts/benchmark_fusion.py     # recibo de fusión + coste de degradación
+```
+
+Embedder real opcional: `core.embedding.FastEmbedEmbedder`
+(paraphrase-multilingual-MiniLM ONNX, 384d, sin torch), inyectable por
+constructor con etiqueta `embedding_model` en cada respuesta.
+
+**Claim limits:** nada de esto acredita calidad clínica, calidad semántica
+sobre corpus biomédico real, ni conformidad regulatoria.

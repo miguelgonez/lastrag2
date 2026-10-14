@@ -1,0 +1,13 @@
+{
+  "downloaded_at": "2026-10-14T08:37:05",
+  "n_abstracts": 1095,
+  "per_topic": {
+    "sglt2": 275,
+    "metformin": 278,
+    "heart_failure": 253,
+    "lung_screening": 289
+  },
+  "source": "NCBI E-utilities (esearch sort=relevance, 5 años)",
+  "format": "parquet+jsonl",
+  "gold_declaration": "topic = etiqueta de sourcing (silver-gold, sin anotación humana) — ver PREREG_QUALITY.md"
+}

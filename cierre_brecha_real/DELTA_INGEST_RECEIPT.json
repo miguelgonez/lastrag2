@@ -1,0 +1,32 @@
+{
+  "fase": "1 — Ingesta piloto PubMed a Delta Lake (Apache Spark)",
+  "timestamp": "2026-10-14T09:04:54",
+  "host": "spark-3de7 (DGX Spark, Tailscale 100.110.13.43, alias ssh sparkjump)",
+  "runtime": {
+    "forma": "docker efímero (--rm; nada instalado en el anfitrión)",
+    "imagen": "apache/spark:3.5.9-java17-python3",
+    "spark": "3.5.9",
+    "delta": "io.delta:delta-spark_2.12:3.2.0 (resuelto por --packages en runtime)",
+    "gotchas_resueltos": [
+      "imagen apache/spark-py sin tags 3.5.x → familia apache/spark",
+      "HOME no escribible para ivy → --conf spark.jars.ivy=/tmp/.ivy2",
+      "uid 185 del contenedor sin permisos en el volumen → salida en delta_out pre-creado con chmod 777 (sin root ni sudo)",
+      "pub_date del piloto es AÑO en texto → cast int + coalesce(0) (el to_date('yyyy-mm-dd') del borrador daba null)"
+    ]
+  },
+  "entrada": "/home/julio/lastrag_pubmed_pilot/cierre_brecha_real/data/pubmed_pilot.parquet",
+  "salida": "/home/julio/lastrag_pubmed_pilot/delta_out/delta_pubmed (formato Delta, _delta_log presente, 1,5 MB)",
+  "verificacion": {
+    "registros_leidos": 1095,
+    "registros_delta": 1095,
+    "cuadre": true,
+    "por_topic": {
+      "sglt2": 275,
+      "metformin": 278,
+      "heart_failure": 253,
+      "lung_screening": 289
+    },
+    "particiones": "topic × year (2021–2026, 24 directorios)"
+  },
+  "claim_limits": "mismo piloto de la Fase 0 (silver-gold por sourcing); esto materializa almacenamiento, NO añade calidad ni claims"
+}

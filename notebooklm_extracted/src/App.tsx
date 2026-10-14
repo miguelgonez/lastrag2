@@ -315,7 +315,7 @@ export default function App() {
           {/* User Profile Avatar / Email style from mockup */}
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-mono font-medium text-slate-400 bg-slate-50 border border-slate-150 px-2.5 py-1 rounded-full hidden sm:inline-block">
-              mjuliolorca@gmail.com
+              [correo-sanitizado]
             </span>
             <div className="w-8 h-8 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full border-2 border-white shadow-sm flex items-center justify-center text-white text-[10px] font-bold">MJ</div>
           </div>
