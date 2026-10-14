@@ -1,0 +1,29 @@
+{
+  "passes": 4,
+  "history": [
+    {
+      "at": "2026-10-14T08:22:48",
+      "delta_r1": 0.5,
+      "improvement": true,
+      "cross_encoder": "failed (crossencoder-onnx:Xenova/ms-marco-MiniLM-L-6-v2+clinical-filters-deterministic-v1::FALLBACK_TypeError)"
+    },
+    {
+      "at": "2026-10-14T08:22:53",
+      "delta_r1": 0.5,
+      "improvement": true,
+      "cross_encoder": "failed (crossencoder-onnx:Xenova/ms-marco-MiniLM-L-6-v2+clinical-filters-deterministic-v1::FALLBACK_TypeError)"
+    },
+    {
+      "at": "2026-10-14T08:24:31",
+      "delta_r1": 0.5,
+      "improvement": true,
+      "cross_encoder": "ok"
+    },
+    {
+      "at": "2026-10-14T08:24:34",
+      "delta_r1": 0.5,
+      "improvement": true,
+      "cross_encoder": "ok"
+    }
+  ]
+}

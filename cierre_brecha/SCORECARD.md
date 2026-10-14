@@ -1,6 +1,6 @@
-# SCORECARD cierre de brecha — 2026-10-14T08:10:28
+# SCORECARD cierre de brecha — 2026-10-14T08:28:31
 **Cumplimiento ponderado: 100%** (fórmula (DONE + 0.5*PARTIAL)/15; {'DONE': 15, 'PARTIAL': 0, 'PENDING': 0, 'FAILED': 0, 'INCOMPLETE': 0, 'BASELINE': 0})
-Pasadas verdes consecutivas: 8/2
+Pasadas verdes consecutivas: 10/2
 Prereg: `65bc31946f69325e…`
 
 - ✅ **CB-2** [ola 1] Router iterativo (decompose/sufficiency/gap) — DONE (5 tests (3P/1B))

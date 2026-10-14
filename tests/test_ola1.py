@@ -184,6 +184,10 @@ def test_cb4_crossencoder_real_if_available():
         ])
         assert out.ranked[0].locator == "blk_a"
         assert "crossencoder-onnx" in out.model
+        # ANTI-FALLBACK-ENMASCARADO: si el cross-encoder cascó y cayó al
+        # determinista, el model lleva "::FALLBACK_" y NO cuenta como real.
+        assert "FALLBACK" not in out.model, \
+            f"cross-encoder degradado sin declarar en el test: {out.model}"
     except Exception as exc:  # pragma: no cover
         import pytest
         pytest.skip(f"cross-encoder ONNX no disponible: {type(exc).__name__}")

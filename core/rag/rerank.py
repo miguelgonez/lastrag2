@@ -116,8 +116,8 @@ class CrossEncoderReranker:
             return RerankResult([], self.model, {})
         try:
             self._ensure_model()
-            pairs = [(query, c.text[:1800]) for c in chunks]
-            scores = list(self._model.rerank(pairs))
+            # API fastembed vigente: rerank(query, documents) -> scores
+            scores = list(self._model.rerank(query, [c.text[:1800] for c in chunks]))
         except Exception as exc:
             # El fallo del cross-encoder NUNCA es silencioso: cae al
             # determinista declarándolo en el resultado.
