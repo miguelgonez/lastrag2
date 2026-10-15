@@ -389,36 +389,44 @@ class LastRAGEngine:
         chunks = state.get("chunks", [])
         if not chunks:
             return {"chunks": []}
-            
-        # Combina los textos y pide al LLM evaluar si la evidencia responde a la consulta y es del dominio correcto.
+
+        # Combina los textos y pide al LLM evaluar si la evidencia responde a
+        # la consulta y es del dominio correcto. FORMATO MCQ: los modelos
+        # soberanos afinados (p. ej. ALIA) siguen el formato test mucho mejor
+        # que la instruccion libre; verificado 15-oct-2026 contra ALIA en el
+        # Spark (A=relevante medico, B=control no medico). El andamiaje se
+        # adapta al modelo soberano, no al reves.
         texts = "\n---\n".join([f"Fragmento {i+1}:\n{c.text[:600]}" for i, c in enumerate(chunks)])
         query = state["query"]
-        
-        prompt = f"""
-        Actúa como un evaluador estricto. Revisa si los siguientes fragmentos de texto contienen información relevante para responder a la consulta médica del usuario.
-        
-        Consulta del usuario: "{query}"
-        
-        Fragmentos recuperados:
-        {texts}
-        
-        Reglas de evaluación:
-        1. Si la consulta del usuario NO tiene relación alguna con medicina, salud, biología clínica o pacientes (por ejemplo, si pregunta sobre urbanismo, leyes de construcción, recetas de cocina, etc.), debes responder "IRRELEVANTE" inmediatamente.
-        2. Si los fragmentos recuperados NO contienen información médica, clínica o científica (por ejemplo, son sentencias judiciales sobre urbanismo), debes responder "IRRELEVANTE".
-        3. Responde "RELEVANTE" ÚNICAMENTE si la consulta es de índole médica Y al menos uno de los fragmentos contiene información clínica que ayude a responderla.
-        
-        Tu respuesta debe ser una sola palabra: RELEVANTE o IRRELEVANTE.
-        """
-        
-        # Llama al LLM para calificar (temperature 0 es ideal, pero ya está configurado en el backend/cliente)
+
+        prompt = f"""Pregunta de examen. Los fragmentos recuperados contienen información clínica o biomédica útil para responder la consulta del usuario?
+
+Consulta: "{query}"
+
+Fragmentos recuperados:
+{texts}
+
+Elige la opción correcta:
+A) Sí, los fragmentos son médicamente relevantes para la consulta
+B) No, los fragmentos no son médicamente relevantes
+
+Responde con una sola letra: A o B. Nada más.
+"""
         decision = await self.llm.generate(prompt)
-        
-        if "IRRELEVANTE" in decision.upper():
+        verdict = decision.strip().upper()
+
+        if verdict.startswith("B") or "IRRELEVANTE" in verdict:
             print(f"🚫 [grade] Se descartaron {len(chunks)} fragmentos por irrelevancia de dominio.")
             return {"chunks": []}
-        else:
+        if verdict.startswith("A") or "RELEVANTE" in verdict:
             print(f"✅ [grade] Evidencia validada para la consulta.")
             return {"chunks": chunks}
+        # Indecible: no se descarta evidencia valida por un capricho de
+        # formato, pero la ausencia de filtro de dominio queda DECLARADA.
+        print(f"⚠️ [grade] Veredicto no parseable ({decision[:40]!r}); evidencia conservada con degradacion.")
+        entry = {"component": "grade", "reason": "UNDECIDABLE_VERDICT",
+                 "effect": "evidence_kept_without_domain_check"}
+        return {"chunks": chunks, "degradations": self._decl(state, entry)}
 
     async def _generate(self, state: RAGState) -> dict:
         chunks = state.get("chunks", [])

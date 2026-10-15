@@ -49,17 +49,37 @@ LocalLLM → Answer + Citation`, sin mocks.
 
 ## Gate — FOUNDATION-T3 = REAL_E2E_PASS
 
-| # | Control | Estado 6-oct-2026 |
+**SUPERADO en su núcleo el 15-oct-2026**: `tests/test_e2e_sovereign.py` 3/3
+PASS en el Spark (spark-3de7) con ALIA real (vLLM `alia-nexthealth-inference`
+:8024, ventana 4096) y Neo4j real (`lastrag-t3-neo4j` :17687, árbol del
+piloto PubMed + fixture). Cadena completa sin mocks: pregunta → router
+(graph→hybrid con degradación declarada) → Qdrant local persistente +
+structural search real (el híbrido también recuperó fragmentos PubMed del
+grafo de 406 documentos) → grade MCQ de ALIA (evidencia validada) →
+generación real → respuesta con citas resueltas del árbol. Suites: Spark
+78 pass/3 skip; MBP 79 pass/2 skip.
+
+| # | Control | Estado 15-oct-2026 |
 |---|---|---|
-| 1 | Qdrant real PASS | **PASS (modo local persistente, embedder desarrollo declarado)** |
-| 2 | Neo4j real PASS | **UNKNOWN — sin servidor hoy; test listo, se ejecuta con `LASTRAG_TEST_NEO4J_URI`** |
-| 3 | LocalLLM real PASS | **Código implementado; UNKNOWN contra endpoint real (no hay vLLM/Ollama/LM Studio activos hoy)** |
-| 4 | FastAPI PASS | Import OK; HTTP real pendiente |
-| 5 | Evidence Pack PASS | Salida con evidence+citations+degradations |
-| 6 | Citation provenance PASS | Parcial (block_id real de Qdrant; resolución Neo4j pendiente control 2) |
-| 7 | PHI/local path PASS | Gate PHI existente; path Qdrant local ejercitado |
-| 8 | Cold-start PASS | PASS (reinicio de cliente sobre almacenamiento persistente) |
-| 9 | Restart persistence PASS | PASS (Qdrant modo local) |
+| 1 | Qdrant real PASS | **PASS** (local persistente en E2E; embedder desarrollo declarado) |
+| 2 | Neo4j real PASS | **PASS** (lastrag-t3-neo4j: esquema + árbol + fulltext + citas en el E2E) |
+| 3 | LocalLLM real PASS | **PASS contra ALIA** (grade MCQ + generación; clamp a max_model_len con reserva real de prompt) |
+| 4 | FastAPI PASS | PARCIAL (import OK; HTTP en transporte pendiente para el acta completa) |
+| 5 | Evidence Pack PASS | **PASS** (evidence[] + citations[] + degradations[] en la salida del run real) |
+| 6 | Citation provenance PASS | **PASS** (locator=block_id; citas documento/sección/página desde el árbol Neo4j) |
+| 7 | PHI/local path PASS | PARCIAL (camino 100% local ejercitado; caso PHI explícito pendiente para el acta) |
+| 8 | Cold-start PASS | **PASS** (reinicio de cliente sobre almacenamiento persistente) |
+| 9 | Restart persistence PASS | **PASS** (Qdrant modo local) |
+
+Lecciones del 15-oct (andamiaje adaptado al modelo soberano): (1) ALIA no
+sigue instrucciones libres pero sí formato test — el grade va en MCQ A/B;
+un ejemplo guiado dentro del prompt LO DESestabiliza (prompt mínimo =
+6/6 estable). (2) El clamp de max_tokens debe reservar ~3 chars/token del
+prompt (con 4 el prompt real 456 tok + 3641 pedidos = 4097 > 4096).
+(3) Un PDF de fixture con insert_text TRUNCA las líneas en el borde de
+página y el grade con razón lo rechaza — insert_textbox envuelve. (4) El
+driver async de Neo4j no puede compartirse entre bucles de eventos:
+cada escenario construye el suyo.
 
 **Regla de oro: no puede haber fallback silencioso.** Si graph falla y usa hybrid,
 queda registrado como DEGRADACIÓN en la respuesta, no como PASS. El motor expone
