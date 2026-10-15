@@ -64,10 +64,10 @@ generación real → respuesta con citas resueltas del árbol. Suites: Spark
 | 1 | Qdrant real PASS | **PASS** (local persistente en E2E; embedder desarrollo declarado) |
 | 2 | Neo4j real PASS | **PASS** (lastrag-t3-neo4j: esquema + árbol + fulltext + citas en el E2E) |
 | 3 | LocalLLM real PASS | **PASS contra ALIA** (grade MCQ + generación; clamp a max_model_len con reserva real de prompt) |
-| 4 | FastAPI PASS | PARCIAL (import OK; HTTP en transporte pendiente para el acta completa) |
+| 4 | FastAPI PASS | **PASS transporte** (uvicorn en socket real: HTML, /api/status honesto sin clave, 400/503 declarados; cableado soberano del app = deuda de despliegue) |
 | 5 | Evidence Pack PASS | **PASS** (evidence[] + citations[] + degradations[] en la salida del run real) |
 | 6 | Citation provenance PASS | **PASS** (locator=block_id; citas documento/sección/página desde el árbol Neo4j) |
-| 7 | PHI/local path PASS | PARCIAL (camino 100% local ejercitado; caso PHI explícito pendiente para el acta) |
+| 7 | PHI/local path PASS | **PASS** (factory LASTRAG_PHI_MODE bloquea cloud; contrato assert_phi_allowed; pipeline comprueba ANTES de parsear; 5 tests) |
 | 8 | Cold-start PASS | **PASS** (reinicio de cliente sobre almacenamiento persistente) |
 | 9 | Restart persistence PASS | **PASS** (Qdrant modo local) |
 
@@ -130,6 +130,37 @@ real (motor local persistente) + 5 registro de degradaciones + 3 E2E soberano.
 UNKNOWN declarados (no simulados): servidor Neo4j (sin Docker/OrbStack hoy),
 endpoint de modelo real, Docling, embedder biomédico real, HTTP de FastAPI
 en transporte. El gate FOUNDATION-T3 **NO está superado**.
+
+## Acta completa T3 (15-oct-2026, tarde)
+
+Los 9 controles del gate quedan cubiertos: transporte FastAPI real
+(`tests/test_fastapi_transport.py`, uvicorn socket efímero, arranque degradado
+DECLARADO sin clave) y camino PHI explícito (`tests/test_phi_gate.py`, tres
+capas fail-closed sin red). Suites: MBP 87 pass/2 skip; Spark 89+ pass tras
+instalar fastapi en su venv. Commit del acta + bench en el historial.
+
+## Wave 1 — Fase 1 ejecutada (15-oct-2026)
+
+Protocolo congelado en `bench/BENCHMARK_WAVE1.md` ANTES de medir; harness
+`bench/run_wave1.py` (hash registrado en el resultado). Corpus: los 1.095
+abstracts del piloto ingeridos COMPLETOS en Qdrant (colección wave1) y en el
+árbol Neo4j T3 (cierra el 406→1.095). 24 consultas congeladas (6/tema):
+
+| modo | prec_temática@5 | MRR_1er_acierto | citas@5 | p50 | p95 | vacío |
+|---|---|---|---|---|---|---|
+| vector_only (hash dev) | 0.467 | 0.616 | 1.00 | 1.1 ms | 5.7 ms | 0% |
+| index_only (Neo4j FT) | 0.400 | 0.417 | 0.708* | 4.4 ms | 11.4 ms | 29.2% |
+| hybrid (fusión locator) | **0.517** | 0.604 | **1.00** | 6.4 ms | 12.5 ms | **0%** |
+
+(*index_only cita 100% cuando devuelve algo; el 0.708 incluye sus 7/24
+consultas vacías.) Lecturas honestas: (1) la fusión híbrida suma precisión y
+ELIMINA la abstención del estructural; (2) paridad de citación 100% a escala
+piloto — todo resultado cita el árbol propio; (3) la recuperación NO es el
+cuello de botella (ms): lo es el QA con ALIA (~25-30 s/consulta, del E2E);
+(4) la precisión ~0.5 es cota INFERIOR con embedder dev no semántico y oro
+temático silver con solapamientos (metformin/sglt2/heart_failure comparten
+espacio clínico); (5) grafo clínico T3 aún pobre (nodos en 6/24 consultas).
+Escala de abstracts: `~/lastrag_pubmed_pilot/PLAN_ESCALA.md` (oleadas + reglas).
 
 ## Roadmap post-T3 (hallazgos FOUNDATION-T3, 6-oct-2026 — recibo b9b7d50f…)
 
