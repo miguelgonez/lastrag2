@@ -42,6 +42,7 @@ from .temporal import temporal_filter
 from .causal import CausalGate, classify_claim
 from .failure_graph import classify_absence, FailureGraph
 from .multimodal import boost_multimodal
+from .grounding import freeze_evidence, strip_fabricated_quotes, verify_grounding
 
 
 # ============================================================
@@ -54,6 +55,9 @@ from .multimodal import boost_multimodal
 #   2. Si aun con evidencia el modelo intenta responder desde conocimiento
 #      general, el motor BLOQUEA esa salida y la sustituye por la abstencion,
 #      declarandolo en degradations[] y en el failure graph.
+#   3. ANCLAJE (grounding.py): la evidencia se CONGELA antes de generar y cada
+#      dato duro de la respuesta (valor+unidad, dosis, porcentaje) y cada cita
+#      textual se verifica CONTRA ESA EVIDENCIA. Lo no anclado no se entrega.
 # El comportamiento anterior (responder desde conocimiento general con aviso
 # declarado) queda como opt-in explicito: allow_general_knowledge=True.
 
@@ -62,6 +66,14 @@ ABSTENTION_RESPONSE = (
     "los documentos indexados para responder a esta consulta con garantías. "
     "Este sistema no responde desde conocimiento general: sin evidencia "
     "verificable, lo dice."
+)
+
+UNGROUNDED_RESPONSE = (
+    "⛔ **Respuesta retenida (anclaje insuficiente).** Se recuperó evidencia, "
+    "pero la respuesta generada contenía afirmaciones o citas que no constan "
+    "en los fragmentos recuperados. No se entrega una afirmación que no pueda "
+    "comprobarse contra la evidencia: consulta los fragmentos citados o "
+    "acota la pregunta."
 )
 
 # Marcadores de respuesta "desde conocimiento general" (el header que impone
@@ -139,6 +151,12 @@ class LastRAGEngine:
         # True = comportamiento legacy (aviso declarado), solo para despliegues
         # NO clinicos y siempre visible en features["generation_policy"].
         allow_general_knowledge: bool = False,
+        # Capa 3: anclaje claim<->evidencia congelada.
+        #   "block"   (default, grado medico): lo no anclado NO se entrega.
+        #   "declare": se entrega retirando citas fabricadas y declarando el
+        #              estado de anclaje (para dominios aun sin calibrar).
+        #   "off":     solo para forks que implementen su propio verificador.
+        grounding: str = "block",
     ):
         self.backend = backend
         self.lastindex = lastindex
@@ -155,6 +173,9 @@ class LastRAGEngine:
         self.temporal_meta = temporal_meta
         self.failure_graph = failure_graph or FailureGraph()
         self.allow_general_knowledge = allow_general_knowledge
+        if grounding not in ("block", "declare", "off"):
+            raise ValueError(f"grounding desconocido: {grounding}")
+        self.grounding = grounding
         self._causal_gate = CausalGate()
         self._conflict_engine = ConflictEngine()
         self.app = self._build()
@@ -587,6 +608,13 @@ Responde con una sola letra: A o B. Nada más.
                     "is_general_knowledge": False, "features": feats,
                     "degradations": self._decl(state, entry)}
 
+        # Capa 3: anclaje contra la evidencia CONGELADA antes de generar.
+        if self.grounding != "off" and chunks:
+            text, grounding_update = self._enforce_grounding(state, text, chunks,
+                                                             feats)
+            if grounding_update is not None:
+                return grounding_update
+
         # El modelo siguio la instruccion de abstenerse (evidencia presente
         # pero insuficiente): se normaliza al texto canonico y confianza 0.
         if "⛔ **Abstención (grado médico)" in text:
@@ -604,6 +632,60 @@ Responde con una sola letra: A o B. Nada más.
             "is_general_knowledge": is_general,
             "features": feats,
         }
+
+    def _enforce_grounding(self, state: RAGState, text: str,
+                           chunks: list[EvidenceChunk], feats: dict
+                           ) -> tuple[str, Optional[dict]]:
+        """Capa 3: congela la evidencia y verifica el anclaje de la respuesta.
+
+        Devuelve (texto, update_o_None). Si el update no es None, ES la
+        respuesta final: en modo `block` lo no anclado no se entrega.
+        """
+        freeze = freeze_evidence(chunks)
+        report = verify_grounding(text, freeze)
+        feats["grounding"] = {**report.to_dict(), "policy": self.grounding}
+
+        if report.grounded:
+            return text, None
+
+        if self.grounding == "declare":
+            # Se entrega, pero las citas fabricadas se retiran y el estado de
+            # anclaje viaja en features: declarado, nunca silencioso.
+            limpio, fabricadas = strip_fabricated_quotes(text, freeze)
+            if fabricadas:
+                limpio += ("\n\n⚠️ **Control de anclaje**: se retiraron "
+                           f"{len(fabricadas)} cita(s) textual(es) que no "
+                           "constan en la evidencia congelada.")
+            entry = {"component": "grounding", "reason": "UNGROUNDED_CLAIMS_DECLARED",
+                     "effect": "answer_served_with_grounding_state",
+                     "state": report.state}
+            return limpio, {"response": limpio,
+                            "confidence": self._score(limpio, chunks,
+                                                      state.get("external_context", ""))[0],
+                            "is_general_knowledge": False, "features": feats,
+                            "degradations": self._decl(state, entry)}
+
+        # modo "block": la respuesta no anclada NO se entrega.
+        print(f"⛔ [grounding] respuesta BLOQUEADA ({report.state}): "
+              f"{len(report.unanchored)} afirmaciones sin anclaje, "
+              f"{len(report.fabricated_quotes)} citas fabricadas")
+        if self.failure_graph:
+            self.failure_graph.record(
+                "UNSUPPORTED_GENERATION",
+                detail=f"anclaje {report.state}: "
+                       f"{len(report.unanchored)} claims sin evidencia, "
+                       f"{len(report.fabricated_quotes)} citas fabricadas")
+        feats["abstention"] = {"kind": "ungrounded_blocked",
+                               "state": report.state,
+                               "blocked_preview": text.strip()[:120]}
+        entry = {"component": "grounding", "reason": "UNGROUNDED_CLAIMS_BLOCKED",
+                 "effect": "response_replaced_by_abstention",
+                 "state": report.state,
+                 "unanchored": len(report.unanchored),
+                 "fabricated_quotes": len(report.fabricated_quotes)}
+        return text, {"response": UNGROUNDED_RESPONSE, "confidence": 0.0,
+                      "is_general_knowledge": False, "features": feats,
+                      "degradations": self._decl(state, entry)}
 
     @staticmethod
     def _admits_general(text: str) -> bool:

@@ -16,12 +16,14 @@
     "Contrato de degradacion: todo fallback declarado, jamas silencioso"
   ],
   "generation_policy": {
-    "default": "abstain",
+    "policy_id": "NH-GRADO-MEDICO-001 v1.0.0 (marco ADLC; aplica a todo producto NextHealth)",
+    "default": "abstain + grounding=block",
     "decided_by": "PI, 2026-10-22: 'grado medico, 0 alucinaciones; si no lo sabe, lo dice, antes de inventar'",
-    "enforcement": "codigo, dos capas: sin evidencia el LLM no se consulta (abstencion deterministica); salida auto-declarada 'desde conocimiento general' bloqueada y sustituida, declarada en degradations[] y en el failure graph",
-    "legacy_opt_in": "allow_general_knowledge=True (solo despliegues no clinicos; visible en features.generation_policy)",
-    "claim_limits": "garantiza 'sin evidencia no hay respuesta' y 'salida general-knowledge no se entrega'; NO verifica frase a frase contra spans (verificador claim<->span pendiente). '0 alucinaciones' a nivel de frase NO se reclama acreditado hoy.",
-    "tests": "tests/test_abstencion_grado_medico.py (permitido + bloqueados)"
+    "enforcement": "codigo, tres capas: (1) sin evidencia el LLM no se consulta (abstencion deterministica); (2) salida auto-declarada 'desde conocimiento general' bloqueada y sustituida; (3) anclaje claim<->evidencia congelada (core/rag/grounding.py): dato duro o cita textual sin respaldo literal => respuesta retenida. Todo declarado en degradations[] y en el failure graph",
+    "legacy_opt_in": "allow_general_knowledge=True y/o grounding='declare'|'off' (solo despliegues no clinicos; visible en features.generation_policy y features.grounding)",
+    "provenance": "la capa 3 es un port horizontal de los forks AESPLA-PRL (lastrag2.py) y FIMABIS (sovereign.py), donde ya operaba: el upstream era la pieza mas debil de la familia",
+    "claim_limits": "el anclaje es LITERAL (datos duros con unidad, dosis, porcentajes y citas textuales), no semantico. Una frase sin datos duros pasa por ausencia de material verificable (estado sin_claims_duros), que NO es un PASS. '0 alucinaciones' sobre parafrasis NO se reclama acreditado hoy: exige verificador semantico y benchmark con tasa medida de unsupported claims.",
+    "tests": "tests/test_abstencion_grado_medico.py (8) + tests/test_anclaje_claim_evidencia.py (16): caso permitido y caso bloqueado por capa"
   },
   "state_pin": {
     "release_commit": "22519f48122e2e6fc306d2e798d13849ff4000cb",

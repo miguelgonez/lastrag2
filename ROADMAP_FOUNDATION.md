@@ -206,12 +206,32 @@ siempre visible en `features.generation_policy`. Salida nueva aditiva:
 `FOUNDATION_VERSION.json`; los consumidores de FORKS.md portan copias de la
 era v2.0.0 y no se ven afectados hasta que rebasen).
 
-**Qué queda para poder reclamar «0 alucinaciones» a nivel de frase** (no se
-reclama hoy): verificador claim↔span post-generación sobre `rag/pack.py`
-(los spans ya son verificables por construcción) + benchmark con corpus real
-y tasa medida de *unsupported claims* (métrica ya prevista en Wave 1).
-Controles ejercitados: `tests/test_abstencion_grado_medico.py` (permitido +
-bloqueados).
+**Capa 3 — anclaje claim↔evidencia (añadida el mismo día):**
+`core/rag/grounding.py` congela la evidencia antes de generar (sha256 por
+fragmento + hash reproducible del conjunto) y verifica por CONTENIDO cada
+dato duro (valor+unidad, dosis, porcentaje) y cada cita textual de la
+respuesta. `grounding="block"` (default) retiene lo no anclado; `"declare"`
+entrega retirando citas fabricadas y declarando el estado; `"off"` solo para
+forks con verificador propio.
+
+*Procedencia honesta:* esta capa NO nació en el upstream. Operaba ya en
+AESPLA-PRL (`lastrag2.py`: `require_grounded_output` → HTTP 422) y en FIMABIS
+(`sovereign.py`: shield de citas + anclaje + retirada). El master era la
+pieza MÁS DÉBIL de la familia: era el único que respondía desde conocimiento
+general por defecto. Se porta como mejora horizontal (regla 3 del
+procedimiento de fork) para que ningún producto futuro la reinvente.
+
+**Qué queda para reclamar «0 alucinaciones» sobre paráfrasis** (no se reclama
+hoy): el anclaje es literal, no semántico — verifica datos duros y citas, no
+equivalencia de sentido. Hace falta verificador semántico claim↔span y
+benchmark con tasa medida de *unsupported claims* (métrica ya prevista en
+Wave 1). Controles ejercitados (permitido + bloqueado por capa):
+`tests/test_abstencion_grado_medico.py` (8) y
+`tests/test_anclaje_claim_evidencia.py` (16).
+
+**Alcance NextHealth:** la doctrina `NH-GRADO-MEDICO-001` (marco ADLC) aplica
+a todo producto, no solo a este motor, con su matriz de estado por producto
+—incluidos los `UNKNOWN` sin auditar—. Ver `FORKS.md`.
 
 ## Auditoría de calidad (22-oct-2026)
 

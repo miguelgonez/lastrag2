@@ -14,6 +14,23 @@
 4. **Compatibilidad por contratos, no por implementación** (canon 1.1.0): un fork sigue siendo compatible mientras mantenga la superficie de `CONTRACT_VERSION 1.0` (ver `FOUNDATION_VERSION.json`). Cambios internos no rompen el contrato; cambiar firmas/estructuras de la superficie o su semántica contractual sí, y exige declararlo.
 5. **Registrar el fork** en la tabla de abajo (append; no reescribir filas existentes).
 
+## Política de grado médico (obligatoria para todo fork)
+
+`NH-GRADO-MEDICO-001` (22-oct-2026) — *«si no lo sabe, lo dice, antes de
+inventar»*. Tres capas por **código**, heredadas del master por defecto:
+(1) sin evidencia el LLM no se invoca; (2) una salida «desde conocimiento
+general» no se entrega; (3) anclaje claim↔evidencia congelada — lo no anclado
+no se entrega. Desactivarlas (`grounding="off"`,
+`allow_general_knowledge=True`) es explícito, viaja en cada respuesta
+(`features.generation_policy`) y exige justificación en el expediente del
+fork. Doctrina y estado por producto:
+`~/Documents/01_PROYECTOS_ACTIVOS/Pyto. NextHealth Ecosistema. 2026/03_Tecnico_y_Producto/NEXTHEALTH_ADLC_20261005/framework/NEXTHEALTH_GRADO_MEDICO.md`
+
+Procedencia honesta: la capa 3 NO nació aquí. Operaba ya en AESPLA-PRL
+(`lastrag2.py`) y FIMABIS (`sovereign.py`); el upstream era la pieza más débil
+de la familia. Se porta al master como mejora horizontal (regla 3 del
+procedimiento de fork) para que ningún producto futuro tenga que reinventarla.
+
 ## Registro de forks y consumidores
 
 | Fork / consumidor | Tipo | Derivado de | Estado | Evidencia de procedencia |

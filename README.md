@@ -120,20 +120,32 @@ CausalGate), en dos capas:
    entrega**: la sustituye por la abstención, lo declara en `degradations[]`
    (`GENERAL_KNOWLEDGE_BLOCKED`) y lo registra en el failure graph
    (`UNSUPPORTED_GENERATION`).
+3. **Anclaje claim ↔ evidencia** (`core/rag/grounding.py`): la evidencia se
+   **congela** antes de generar (sha256 por fragmento + `evidence_hash`
+   reproducible) y cada dato duro de la respuesta (valor+unidad, dosis,
+   porcentaje) y cada cita textual se verifica **por contenido** contra esa
+   evidencia. Lo no anclado no se entrega (`grounding="block"`, default);
+   modos `"declare"` (entrega retirando citas fabricadas y declarando el
+   estado) y `"off"` (solo para forks con verificador propio).
 
-Toda respuesta declara su política en `features.generation_policy` y toda
-abstención (sin evidencia, bloqueo o gate causal) es distinguible en el campo
-`abstained`. El comportamiento anterior (aviso «⚠️ conocimiento médico
-general» con confianza capada) queda como **opt-in explícito** para
-despliegues no clínicos: `LastRAGEngine(..., allow_general_knowledge=True)`.
+Toda respuesta declara su política en `features.generation_policy`, su estado
+de anclaje en `features.grounding` y toda abstención (sin evidencia, bloqueo,
+no anclada o gate causal) es distinguible en el campo `abstained`. El
+comportamiento anterior (aviso «⚠️ conocimiento médico general» con confianza
+capada) queda como **opt-in explícito** para despliegues no clínicos:
+`LastRAGEngine(..., allow_general_knowledge=True)`.
 
-**Límite declarado (sin esto, el claim sería falso):** estas capas garantizan
-«sin evidencia no hay respuesta» y «una salida auto-declarada como
-conocimiento general no se entrega». **No** verifican frase a frase la
-generación contra los spans del Evidence Pack; «0 alucinaciones» a nivel de
-frase exige ese verificador (trabajo futuro sobre `rag/pack.py`, que ya ancla
-spans verificables) y benchmark con corpus real. Pruebas del control (caso
-permitido + bloqueados): `tests/test_abstencion_grado_medico.py`.
+**Límite declarado (sin esto, el claim sería falso):** el anclaje es
+**literal**, no semántico: verifica que los datos duros y las citas consten en
+la evidencia. Una frase sin datos duros ni citas pasa por **ausencia de
+material verificable** (estado `sin_claims_duros`), que no es un PASS.
+Reclamar «0 alucinaciones» sobre paráfrasis exigiría un verificador semántico
+y benchmark con tasa medida de *unsupported claims*: no se reclama hoy.
+Pruebas del control (caso permitido + casos bloqueados):
+`tests/test_abstencion_grado_medico.py` y `tests/test_anclaje_claim_evidencia.py`.
+
+Doctrina NextHealth aplicable a **todo producto** (no solo a este motor):
+`NH-GRADO-MEDICO-001`, en el marco ADLC — ver `FORKS.md` para la ruta.
 
 Contratos implementados (test de humo en verde, con dobles):
 - Interfaz `VectorBackend` + modelos de citación.
