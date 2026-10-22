@@ -64,7 +64,8 @@ class EvidenceChunk:
     locator: str                        # referencia opaca propia del backend
     citation: Optional[Citation] = None  # la rellena LastIndex (post-retrieval)
     score: float = 0.0                  # score de similaridad del backend
-    kind: str = "text"                  # "text" | "table" | "figure" (Ola 3)
+    # "text" | "table" | "figure" (Ola 3) | "abstract" (backend Delta/PubMed)
+    kind: str = "text"
 
     def to_dict(self) -> dict[str, Any]:
         return {

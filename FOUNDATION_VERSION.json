@@ -5,7 +5,7 @@
   "version_note": "release definitivo: commit limpio 22519f48 (12 ficheros P0.5 commiteados), tree hash git reproducible, suite 26/26 verificada desde checkout limpio (/tmp/lastrag_release_test, 2026-10-06)",
   "contract_version": "1.0",
   "date": "2026-10-06",
-  "canon": "OMEGA-MR2-LASTRAG-FOUNDATION-CANON v1.2.0 (congelado vigente; ~/ZCodeProject/omega_architecture_canon/LASTRAG_FOUNDATION_CANON.md)",
+  "canon": "OMEGA-MR2-LASTRAG-FOUNDATION-CANON v1.3.0 (congelado vigente; ~/ZCodeProject/omega_architecture_canon/LASTRAG_FOUNDATION_CANON.md)",
   "role": "Componente horizontal reutilizable y forkable de OMEGA-MR2. NO es una solucion clinica.",
   "public_contract": [
     "VectorBackend / EvidenceChunk / RetrievalResult(degraded_reason) / health()",
@@ -27,16 +27,34 @@
     "clean_checkout_verification": "clone a /tmp + suite 26/26 (2026-10-06)"
   },
   "verification": {
-    "suite": "26/26 pass",
+    "suite_release": "26/26 pass (2026-10-06, dos corridas, checkout limpio)",
+    "suite_actual": "109 pass / 3 skip declarados (2026-10-22, MBP, auditoria de calidad)",
     "executed": [
-      "2026-10-06 (dos corridas)"
+      "2026-10-06 (release v2.0.0, dos corridas)",
+      "2026-10-15 (acta T3: MBP 87/2 · Spark 86-89/3) ",
+      "2026-10-22 (auditoria de calidad: 109/3, +22 regresiones nuevas)"
+    ],
+    "accredited": [
+      "FOUNDATION-T3 = REAL_E2E_PASS (2026-10-15, spark-3de7: ALIA real vLLM :8024 + Neo4j real lastrag-t3-neo4j :17687; commits ef6f6b2 y 9cc9765; los 9 controles cubiertos, transporte FastAPI y camino PHI incluidos)"
     ],
     "not_accredited": [
-      "FOUNDATION-T3 (E2E soberano con endpoint LLM real + Neo4j)",
-      "embedder semantico (HashingEmbedder es dev)"
-    ]
+      "embedder semantico (HashingEmbedder es dev; FastEmbed disponible, calidad biomedica ES sin benchmark)",
+      "calidad clinica y conformidad regulatoria (fuera del alcance del Foundation por canon)",
+      "Wave 1 fase 2 (baseline LastRAG-MD stable-v1.0 con su propio arnes)"
+    ],
+    "nota_de_procedencia": "el canon v1.3.0 (sec. 8) registra ademas un terminal 'T3-T3 FOUNDATION_T3_PASS 51/51, recibo b9b7d50f' con fecha 6-oct-2026, mientras su propia tabla de censo (sec. 6, misma fecha) declara el E2E soberano NO acreditado. La evidencia ejecutable y reproducible de este repositorio es la del 15-oct (tests/test_e2e_sovereign.py contra ALIA y Neo4j reales). La discrepancia de fechas del canon no se edita aqui: es un veredicto historico y su correccion corresponde a una version nueva del canon decidida por el PI."
   },
   "consumers_declared": [
     "omega-sovereign-evidence (dependencia logica; integracion fisica pendiente I1)"
-  ]
+  ],
+  "quality_audit": {
+    "date": "2026-10-22",
+    "scope": "revision de calidad del arbol master (codigo, contratos, pruebas y documentos de estado)",
+    "expediente": "AUDITORIA_CALIDAD_20261022.md",
+    "contract_version_impact": "ninguno: CONTRACT_VERSION sigue en 1.0. Los cambios corrigen incumplimientos del contrato existente (degradaciones declaradas, procedencia, fail-closed); no alteran firmas ni semantica publica.",
+    "defects_fixed": 21,
+    "doc_defects_fixed": 3,
+    "escalated_not_edited": 1,
+    "regression_tests_added": 22
+  }
 }

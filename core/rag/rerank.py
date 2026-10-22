@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from datetime import date
 from typing import Optional
 
 from ..backends.base import EvidenceChunk
@@ -53,8 +54,10 @@ class ClinicalReranker:
 
     model = "clinical-filters-deterministic-v1"
 
-    def __init__(self, now_year: int = 2026):
-        self.now_year = now_year
+    def __init__(self, now_year: Optional[int] = None):
+        # El bonus de actualidad se mide contra el año en curso, no contra una
+        # constante: con 2026 fijo el ranking se habria congelado en 2027.
+        self.now_year = now_year if now_year is not None else date.today().year
 
     def rerank(self, query: str, chunks: list[EvidenceChunk]) -> RerankResult:
         query_terms = _content_terms(query)

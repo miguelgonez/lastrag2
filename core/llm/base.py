@@ -58,13 +58,18 @@ class GeminiLLM(LLMClient):
         from google.genai import types
 
         client = self._get_client()
-        response = client.models.generate_content(
+        config = types.GenerateContentConfig(
+            temperature=0.2,
+            max_output_tokens=max_tokens,
+        )
+        # El SDK de google-genai es SINCRONO: llamarlo directamente dentro de
+        # una corrutina bloquea el event loop durante toda la generacion (y con
+        # el, cualquier otra consulta del servidor). Se delega a un hilo.
+        response = await asyncio.to_thread(
+            client.models.generate_content,
             model=self.model,
             contents=[prompt],
-            config=types.GenerateContentConfig(
-                temperature=0.2,
-                max_output_tokens=max_tokens,
-            ),
+            config=config,
         )
         return response.text or ""
 
@@ -125,6 +130,7 @@ class LocalLLM(LLMClient):
         self.temperature = temperature
         self._client = None
         self._max_model_len = None  # cache de metadata (clamp de max_tokens)
+        self._metadata_checked = False  # distingue "sin dato" de "sin consultar"
         self.last_token_adjust: Optional[dict] = None
 
     def _http(self):
@@ -143,13 +149,21 @@ class LocalLLM(LLMClient):
     async def _model_len(self) -> Optional[int]:
         """Ventana del modelo segun /v1/models (vLLM la expone como
         max_model_len). Cacheada; si no se puede consultar, None (sin clamp:
-        el servidor fallara cerrado si el valor excede)."""
-        if self._max_model_len is None:
-            try:
-                meta = await self.model_metadata()
-                self._max_model_len = meta.get("max_model_len") or meta.get("context_length")
-            except Exception:
-                return None
+        el servidor fallara cerrado si el valor excede).
+
+        La cache distingue "no consultado" de "consultado y sin dato": un
+        endpoint que no publica la ventana se consultaba en CADA generacion
+        (dos GET /models por respuesta) porque None se leia como cache vacia.
+        """
+        if self._metadata_checked:
+            return self._max_model_len
+        try:
+            meta = await self.model_metadata()
+            self._max_model_len = (meta.get("max_model_len")
+                                   or meta.get("context_length"))
+            self._metadata_checked = True
+        except Exception:
+            return None   # fallo transitorio: se reintentara en la siguiente
         return self._max_model_len
 
     async def _clamp_tokens(self, prompt: str, max_tokens: int) -> int:
@@ -218,6 +232,7 @@ class LocalLLM(LLMClient):
         }
         client = self._http()
         attempt = 0
+        emitted = 0  # deltas ya entregados al consumidor en este stream
         while True:
             try:
                 async with client.stream(
@@ -243,16 +258,26 @@ class LocalLLM(LLMClient):
                         except (json.JSONDecodeError, KeyError, IndexError, TypeError):
                             continue  # chunk SSE no estándar (keep-alive, uso, etc.)
                         if delta:
+                            emitted += 1
                             yield delta
                     return
             except LocalLLMError as exc:
-                if exc.reason == "RETRIABLE_HTTP_ERROR" and attempt < self.max_retries:
+                if (exc.reason == "RETRIABLE_HTTP_ERROR"
+                        and attempt < self.max_retries and emitted == 0):
                     attempt += 1
                     await asyncio.sleep(self.backoff * (2 ** (attempt - 1)))
                     continue
                 raise
             except Exception as exc:  # timeouts, transporte, conexión
                 name = type(exc).__name__
+                # Reintentar DESPUES de haber emitido deltas duplicaria el
+                # prefijo ya entregado (el endpoint regenera desde cero): un
+                # corte a mitad de stream falla cerrado, no se "recompone".
+                if emitted:
+                    raise LocalLLMError(
+                        "STREAM_INTERRUPTED",
+                        f"{name} tras {emitted} deltas; sin reintento para no "
+                        f"duplicar contenido ya entregado") from exc
                 if attempt < self.max_retries:
                     attempt += 1
                     await asyncio.sleep(self.backoff * (2 ** (attempt - 1)))

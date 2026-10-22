@@ -104,7 +104,12 @@ MERGE (b)-[:ON_PAGE]->(p)
 RESOLVE_CITATION = """
 MATCH (b:EvidenceBlock {block_id: $block_id})
 OPTIONAL MATCH (d:Document {document_id: b.document_id})
-OPTIONAL MATCH (ch:Chapter)-[:HAS_SECTION*0..]->(:Section {path: b.section_path})
+// El capitulo se busca SIEMPRE dentro del mismo documento: `path` solo es
+// unico por (document_id, path). Sin esta restriccion, dos documentos con la
+// misma ruta de seccion ("1. Introduccion") podian atribuir el capitulo del
+// documento equivocado a la cita.
+OPTIONAL MATCH (ch:Chapter {document_id: b.document_id})-[:HAS_SECTION*0..]->
+               (:Section {document_id: b.document_id, path: b.section_path})
 RETURN
   coalesce(d.title, b.document_id) AS document,
   ch.title                        AS chapter,

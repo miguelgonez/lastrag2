@@ -29,7 +29,8 @@ core/
 │   ├── parser.py          # Docling (primario) + PyMuPDF (fallback) → árbol con block_id
 │   └── navigator.py       # ingesta del árbol + resolución locator→Citation + retriever estructural
 ├── llm/
-│   └── base.py            # LLMClient (interfaz) + GeminiLLM (cloud) + LocalLLM (stub DGX)
+│   └── base.py            # LLMClient + GeminiLLM (cloud) + LocalLLM real
+│                          # (OpenAI-compatible: retries, streaming, fail-closed)
 ├── rag/
 │   └── engine.py          # LangGraph agnóstico de backend + router Hermes + scoring honesto
 ├── ingestion.py           # pipeline unificado: parser → LastIndex + backend con MISMO block_id
@@ -87,11 +88,20 @@ query → Hermes router → {semantic | structural | hybrid | graph}
                   respuesta trazable + citaciones
 ```
 
-## Estado actual — LastRAG 2 Foundation / PRE-ALPHA
+## Estado actual — LastRAG 2 Foundation (22-oct-2026)
 
-No es un producto ni un sistema validado: es un core-contract v2 en
-estabilización (ver `ROADMAP_FOUNDATION.md`; reorientación del PI del
-6-oct-2026: «arquitectura diseñada» ≠ «sistema validado»).
+No es un producto clínico ni un sistema validado para uso sanitario: es el
+motor horizontal de OMEGA-MR2 (ver `ROADMAP_FOUNDATION.md`; reorientación del
+PI del 6-oct-2026: «arquitectura diseñada» ≠ «sistema validado»).
+
+- **Gate FOUNDATION-T3 = REAL_E2E_PASS: ACREDITADO el 15-oct-2026** en el Spark
+  (ALIA real por vLLM + Neo4j real, cadena completa sin mocks, los 9 controles
+  cubiertos). Detalle y acta en `ROADMAP_FOUNDATION.md`.
+- **Suite: 109 pass / 3 skip declarados** (22-oct, MBP) tras la auditoría de
+  calidad: 21 defectos corregidos y 22 regresiones añadidas
+  (`AUDITORIA_CALIDAD_20261022.md`).
+- **Pendiente para la capa C («LastRAG 2.0»)**: embedder biomédico real y
+  Wave 1 fase 2 (baseline `LastRAG-MD stable-v1.0` con su propio arnés).
 
 Contratos implementados (test de humo en verde, con dobles):
 - Interfaz `VectorBackend` + modelos de citación.
@@ -100,10 +110,11 @@ Contratos implementados (test de humo en verde, con dobles):
 - Motor RAG agnóstico con router Hermes y scoring honesto.
 - Pipeline de ingesta unificada con `block_id` común.
 
-Wave 0 (P0.5 SOVEREIGN E2E FOUNDATION) en curso:
+Wave 0 (P0.5 SOVEREIGN E2E FOUNDATION) — **completada** (T3, 15-oct-2026):
 - `LocalLLM` real: cliente OpenAI-compatible (vLLM/TGI/Ollama/LM Studio) con
-  timeout, retries limitados, streaming, health check, model metadata y
-  fail-closed. Pendiente de ejercitar contra un endpoint de modelo real.
+  timeout, retries limitados, streaming, health check, model metadata, clamp
+  de `max_tokens` contra la ventana del modelo y fail-closed. **Ejercitado
+  contra ALIA real** (vLLM en el Spark) en el E2E del gate T3.
 - Qdrant real en modo local persistente: ingesta/búsqueda/filtros/top-k/
   reinicio verificados con embedder de desarrollo DECLARADO
   (`local-hash-ngram-256-v1`); el embedder biomédico del despliegue queda
@@ -113,12 +124,15 @@ Wave 0 (P0.5 SOVEREIGN E2E FOUNDATION) en curso:
   respuesta.
 
 Pendiente (orden congelado en ROADMAP_FOUNDATION.md):
-1. Neo4j real en el camino E2E (`Document→Section→EvidenceBlock→Citation`
-   persistido y consultado) — requiere servidor (Docker/remoto autorizado).
-2. Endpoint LLM real (vLLM en Spark/Picasso, Ollama o LM Studio local).
-3. Gate FOUNDATION-T3 = REAL_E2E_PASS; después benchmark (Wave 1, contra
-   LastRAG-MD stable-v1.0) y sólo entonces features (Waves 2-6).
-4. Capa FastAPI completa + persistencia y reranking híbrido.
+1. ~~Neo4j real en el camino E2E~~ · ~~endpoint LLM real~~ · ~~gate
+   FOUNDATION-T3~~ — **hechos el 15-oct-2026** (acta en el roadmap).
+2. Embedder biomédico real (hoy: hashing de desarrollo DECLARADO, o FastEmbed
+   multilingüe sin benchmark biomédico en español).
+3. Wave 1 fase 2: baseline `LastRAG-MD stable-v1.0` con su propio arnés;
+   sólo después, features (Waves 2-6).
+4. Cableado soberano completo del `app.py` (factory por env + LocalLLM +
+   LastIndex real): hoy el transporte está acreditado, el cableado es deuda
+   declarada de despliegue.
 
 ---
 
@@ -135,8 +149,8 @@ bloqueado por control) y expediente sellado (`cierre_brecha/`):
 | 5 | `rag/failure_graph.py` | modos de fallo con coste medido (ms) · taxonomía NO_EVIDENCE vs INSUFFICIENT_EVIDENCE |
 | 3 | `rag/multimodal.py` | extracción posicional de tablas/figuras (PyMuPDF, sin modelo de visión — PARTIAL declarado) + routing multimodal |
 
-**Estado (13-oct-2026):** 14/15 compromisos del deck DONE + 1 PARTIAL (97%
-ponderado); suite 75/75. Bucle de mantenimiento:
+**Estado (22-oct-2026):** 15/15 compromisos del deck DONE (100 % ponderado,
+N-VERDE); suite 109 pass / 3 skip declarados. Bucle de mantenimiento:
 
 ```bash
 .venv/bin/python scripts/cierre_brecha_loop.py   # scorecard desde tests; exit 0/1/75

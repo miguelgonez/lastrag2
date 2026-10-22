@@ -47,6 +47,23 @@ def vision_available() -> bool:
         return False
 
 
+def _docling_page_no(item, default: int = 1) -> int:
+    """Pagina 1-based de un item Docling. Acepta `page_no` (nombre vigente) y
+    `pageno` (defensivo); sin provenance devuelve `default` DECLARADO."""
+    prov = getattr(item, "prov", None)
+    if not prov:
+        return default
+    first = prov[0]
+    for attr in ("page_no", "pageno", "page"):
+        value = getattr(first, attr, None)
+        if value is not None:
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                continue
+    return default
+
+
 def _extract_tables_docling(pdf_path: str, max_pages: int = 50) -> list[TableBlock]:
     """Extracción con modelo REAL de estructura de tablas (TableFormer vía
     Docling, parser primario declarado del proyecto). Descarga sus modelos
@@ -61,10 +78,10 @@ def _extract_tables_docling(pdf_path: str, max_pages: int = 50) -> list[TableBlo
     tables: list[TableBlock] = []
     with fitz.open(pdf_path) as doc:
         for item in result.document.tables:
-            try:
-                page_no = int(item.prov[0].pageno) if item.prov else 1
-            except Exception:
-                page_no = 1
+            # Docling expone `page_no` (igual que en lastindex/parser.py). El
+            # nombre `pageno` lanzaba AttributeError y TODAS las tablas caian
+            # al catch con page=1: la cita apuntaba a una pagina falsa.
+            page_no = _docling_page_no(item)
             if page_no > max_pages:
                 continue
             try:

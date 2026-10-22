@@ -14,6 +14,7 @@ papers, BOE). Para datos reales de paciente -> QdrantBackend.
 
 from __future__ import annotations
 
+import asyncio
 import os
 import re
 import time
@@ -97,7 +98,9 @@ class GeminiFileSearchBackend(VectorBackend):
                     return IngestResult(
                         document_id, "error", error="timeout indexacion (>180s)"
                     )
-                time.sleep(3)
+                # await, no time.sleep: bloquear el loop aqui congelaba todo el
+                # proceso (hasta 180 s) en cualquier despliegue asincrono.
+                await asyncio.sleep(3)
                 operation = self.client.operations.get(operation)
 
             if getattr(operation, "error", None):
@@ -116,7 +119,14 @@ class GeminiFileSearchBackend(VectorBackend):
         metadata_filter: Optional[dict[str, Any]] = None,
     ) -> RetrievalResult:
         if not self.client or not self.store:
-            return RetrievalResult(backend=self.name)
+            # P0.5: "sin store" NO es "sin evidencia". Si el backend no esta
+            # operativo la razon viaja declarada; de lo contrario el motor
+            # leeria un vacio documental que nunca se midio.
+            return RetrievalResult(
+                backend=self.name,
+                degraded_reason="GEMINI_NOT_INITIALIZED:"
+                                + ("NO_CLIENT" if not self.client else "NO_STORE"),
+            )
 
         prompt = self._retrieval_prompt(query, top_k)
         try:
@@ -136,8 +146,13 @@ class GeminiFileSearchBackend(VectorBackend):
                 ),
             )
         except Exception as e:
+            # Mismo contrato que QdrantBackend: el error viaja en
+            # degraded_reason y el motor lo declara en degradations[].
             print(f"⚠️ Gemini search error: {e}")
-            return RetrievalResult(backend=self.name)
+            return RetrievalResult(
+                backend=self.name,
+                degraded_reason=f"GEMINI_ERROR:{type(e).__name__}",
+            )
 
         chunks = self._parse_grounded(response, top_k)
         return RetrievalResult(chunks=chunks, backend=self.name, raw=response)

@@ -28,6 +28,9 @@ from .base import (
 # Tipo del embedder: lista de textos -> lista de vectores.
 Embedder = Callable[[Sequence[str]], list[list[float]]]
 
+#: Modelo del embedder por defecto (se usa si no se inyecta ninguno).
+DEFAULT_EMBEDDING_MODEL = "sentence-transformers/all-mpnet-base-v2"
+
 
 class QdrantBackend(VectorBackend):
     name = "qdrant"
@@ -55,8 +58,10 @@ class QdrantBackend(VectorBackend):
         self.vector_size = vector_size
         self.api_key = api_key
         # Etiqueta de procedencia: el embedding usado queda registrado en cada
-        # punto y en cada respuesta. "unknown" solo es aceptable en desarrollo.
-        self.embedding_model = embedding_model
+        # punto y en cada respuesta. Si no se declara explicitamente se deriva
+        # del embedder real (model_id) o del modelo por defecto: un punto
+        # indexado como "unknown" es un agujero de procedencia, no un default.
+        self.embedding_model = self._resolve_model_label(embedding_model, embedder)
         self._embed = embedder or self._default_embedder()
         self._client = None  # qdrant_client.QdrantClient
 
@@ -107,7 +112,11 @@ class QdrantBackend(VectorBackend):
             )
 
         texts = [b["text"] for b in blocks]
-        vectors = self._embed(texts)
+        try:
+            vectors = self._embed(texts)
+        except Exception as e:
+            return IngestResult(document_id, "error",
+                                error=f"EMBEDDER_ERROR:{type(e).__name__}: {e}")
         points = [
             PointStruct(
                 id=self._point_id(b["block_id"]),
@@ -150,7 +159,17 @@ class QdrantBackend(VectorBackend):
                 ]
             )
 
-        vector = self._embed([query])[0]
+        try:
+            vector = self._embed([query])[0]
+        except Exception as e:
+            # El embedder es parte del camino de recuperacion: si falla (modelo
+            # ausente, descarga imposible, OOM) el contrato exige declararlo,
+            # no propagar una excepcion que el motor no espera del backend.
+            print(f"⚠️ Qdrant embedder error: {e}")
+            return RetrievalResult(
+                backend=self.name, degraded_reason=f"EMBEDDER_ERROR:{type(e).__name__}"
+            )
+
         try:
             # qdrant-client >= 1.10: query_points sustituye a search (eliminado)
             response = self._client.query_points(
@@ -222,6 +241,17 @@ class QdrantBackend(VectorBackend):
                     "backend": self.name, "mode": self.mode}
 
     # --- helpers ---
+    @staticmethod
+    def _resolve_model_label(declared: str, embedder: Optional[Embedder]) -> str:
+        """Procedencia del embedding: etiqueta declarada > `model_id` del
+        embedder inyectado > modelo por defecto. Solo queda "unknown" si el
+        embedder inyectado no se identifica (y entonces es verdad)."""
+        if declared and declared != "unknown":
+            return declared
+        if embedder is None:
+            return DEFAULT_EMBEDDING_MODEL
+        return getattr(embedder, "model_id", None) or "unknown"
+
     @staticmethod
     def _point_id(block_id: str) -> int:
         # Qdrant admite int o UUID. Derivamos int estable del block_id.

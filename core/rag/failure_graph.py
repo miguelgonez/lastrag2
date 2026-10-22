@@ -34,12 +34,23 @@ INSUFFICIENT_EVIDENCE = "INSUFFICIENT_EVIDENCE"  # recuperado pero no cubre
 
 
 def classify_absence(chunks_count: int, coverage: float | None,
-                     claims_count: int = 0) -> dict:
+                     claims_count: int = 0, discarded_by_grade: int = 0) -> dict:
     """Clasifica la ausencia de evidencia de forma DISTINGUIBLE:
     - NO_EVIDENCE: el sistema no recuperó nada (problema de recuperación).
     - INSUFFICIENT_EVIDENCE: hay material pero no cubre la consulta
       (problema de cobertura/dominio). La distinción importa porque el
-      remedio es distinto: re-buscar vs admitir vacío documental."""
+      remedio es distinto: re-buscar vs admitir vacío documental.
+
+    `discarded_by_grade` separa un tercer caso que antes se confundía con el
+    primero: SÍ se recuperó material y fue el filtro de dominio quien lo
+    descartó. El remedio no es re-buscar: es revisar dominio/consulta."""
+    if chunks_count == 0 and discarded_by_grade:
+        return {"type": INSUFFICIENT_EVIDENCE,
+                "detail": f"0 fragmentos tras descarte del grade "
+                          f"({discarded_by_grade} recuperados y descartados "
+                          f"por irrelevancia de dominio)",
+                "remedy": "revisar dominio de la consulta / corpus indexado; "
+                          "NO es un fallo de recuperación"}
     if chunks_count == 0:
         return {"type": NO_EVIDENCE,
                 "detail": "0 fragmentos recuperados",

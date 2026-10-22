@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from datetime import date
 from typing import Optional
 
 from ..backends.base import EvidenceChunk
@@ -45,12 +46,16 @@ def parse_temporal_meta(locator: str, meta: dict) -> TemporalMeta:
     )
 
 
-def wants_historical(query: str) -> bool:
+def wants_historical(query: str, now_year: Optional[int] = None) -> bool:
+    """Una consulta es historica si lo dice (marcadores) o si el ultimo año
+    que menciona es ANTERIOR al año en curso. El umbral se calculaba contra
+    un 2024 fijo: en 2026 una pregunta «en 2025» se trataba como vigente."""
+    now_year = now_year if now_year is not None else date.today().year
     low = query.lower()
     if any(m in low for m in _HISTORICAL_MARKERS):
         return True
     years = [int(y) for y in _YEAR_RE.findall(query)]
-    return bool(years) and max(years) < 2024
+    return bool(years) and max(years) < now_year
 
 
 def extract_year(query: str) -> Optional[int]:
@@ -69,8 +74,11 @@ class TemporalDecision:
 def temporal_filter(chunks: list[EvidenceChunk],
                     meta_by_locator: dict[str, dict],
                     query: str,
-                    now_year: int = 2026) -> TemporalDecision:
-    historical = wants_historical(query)
+                    now_year: Optional[int] = None) -> TemporalDecision:
+    # El "ahora" se lee del reloj, no de una constante: con 2026 fijo, en 2027
+    # una guia caducada en 2026 se habria seguido sirviendo como vigente.
+    now_year = now_year if now_year is not None else date.today().year
+    historical = wants_historical(query, now_year)
     at_year = extract_year(query) if historical else now_year
     kept, dropped, undated = [], [], 0
     for c in chunks:

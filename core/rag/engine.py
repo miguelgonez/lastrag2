@@ -239,7 +239,7 @@ class LastRAGEngine:
         feats.update(pp)
         if not chunks and any(d.get("effect") == "structural_retrieval_failed"
                               for d in degradations):
-            print(f"⚠️ [structural] degradado")
+            print("⚠️ [structural] degradado")
         print(f"📑 [structural] {len(chunks)} bloques con localizacion exacta")
         return {"chunks": chunks, "degradations": degradations, "features": feats}
 
@@ -413,20 +413,42 @@ B) No, los fragmentos no son médicamente relevantes
 Responde con una sola letra: A o B. Nada más.
 """
         decision = await self.llm.generate(prompt)
-        verdict = decision.strip().upper()
+        verdict = self._normalize_verdict(decision)
+        feats = dict(state.get("features") or {})
 
         if verdict.startswith("B") or "IRRELEVANTE" in verdict:
+            # Descartar evidencia es una DECISION del sistema, no un vacio
+            # documental: si no se declara, la respuesta es indistinguible de
+            # "no se recupero nada" y el remedio que sugiere es el equivocado.
             print(f"🚫 [grade] Se descartaron {len(chunks)} fragmentos por irrelevancia de dominio.")
-            return {"chunks": []}
+            feats["grade"] = {"verdict": "B", "kept": 0, "discarded": len(chunks)}
+            entry = {"component": "grade", "reason": "DOMAIN_IRRELEVANT",
+                     "effect": "evidence_discarded_by_grade",
+                     "discarded": len(chunks)}
+            return {"chunks": [], "features": feats,
+                    "degradations": self._decl(state, entry)}
         if verdict.startswith("A") or "RELEVANTE" in verdict:
             print(f"✅ [grade] Evidencia validada para la consulta.")
-            return {"chunks": chunks}
+            feats["grade"] = {"verdict": "A", "kept": len(chunks), "discarded": 0}
+            return {"chunks": chunks, "features": feats}
         # Indecible: no se descarta evidencia valida por un capricho de
         # formato, pero la ausencia de filtro de dominio queda DECLARADA.
         print(f"⚠️ [grade] Veredicto no parseable ({decision[:40]!r}); evidencia conservada con degradacion.")
+        feats["grade"] = {"verdict": None, "kept": len(chunks), "discarded": 0,
+                          "raw": decision.strip()[:80]}
         entry = {"component": "grade", "reason": "UNDECIDABLE_VERDICT",
                  "effect": "evidence_kept_without_domain_check"}
-        return {"chunks": chunks, "degradations": self._decl(state, entry)}
+        return {"chunks": chunks, "features": feats,
+                "degradations": self._decl(state, entry)}
+
+    @staticmethod
+    def _normalize_verdict(decision: str) -> str:
+        """Normaliza el veredicto MCQ del grade. Los modelos soberanos
+        prefijan con comillas, markdown o espacios ("**A)**", "«A»"); eso no
+        es un veredicto distinto. Se limpian SOLO adornos: si tras limpiarlos
+        no empieza por A/B, sigue siendo INDECIBLE (no se adivina)."""
+        cleaned = (decision or "").strip().strip("*_\"'«»` \t\n\r")
+        return cleaned.upper()
 
     async def _generate(self, state: RAGState) -> dict:
         chunks = state.get("chunks", [])
@@ -565,7 +587,8 @@ Responde con una sola letra: A o B. Nada más.
             coverage = iters[-1].get("coverage")
         absence = classify_absence(
             len(chunks), coverage,
-            claims_count=features.get("pack", {}).get("claims", 0))
+            claims_count=features.get("pack", {}).get("claims", 0),
+            discarded_by_grade=features.get("grade", {}).get("discarded", 0))
         if not chunks and self.failure_graph:
             self.failure_graph.record(
                 "RETRIEVAL_MISS",
@@ -594,15 +617,11 @@ Responde con una sola letra: A o B. Nada más.
     def _fuse(
         a: list[EvidenceChunk], b: list[EvidenceChunk]
     ) -> list[EvidenceChunk]:
-        """Fusion por locator; el estructural (citacion exacta) tiene prioridad."""
-        by_loc: dict[str, EvidenceChunk] = {}
-        for c in b:  # estructural primero (citacion confiable)
-            by_loc[c.locator or c.text[:40]] = c
-        for c in a:
-            key = c.locator or c.text[:40]
-            if key not in by_loc:
-                by_loc[key] = c
-        return list(by_loc.values())
+        """Fusion por locator; el estructural (`b`) tiene prioridad por citacion
+        exacta. Delega en `fusion.fuse_by_locator` (misma semantica, una sola
+        implementacion). Se conserva como API del arnes de benchmark
+        (`bench/run_wave1.py`), que pinea esta firma."""
+        return fuse_by_locator(b, a)
 
     @staticmethod
     def _prompt(query: str, evidence: str, citations: str, external: str, graph_context: str) -> str:

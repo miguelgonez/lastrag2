@@ -68,10 +68,28 @@ def classify_claim(text: str) -> Optional[str]:
 
 
 def classify_claims(claims: list[Claim]) -> dict[str, Optional[str]]:
-    """locator-de-claim → nivel. Se usa para etiquetar el Evidence Pack."""
+    """locator → nivel causal. Es el mapa que consume
+    `pack.extract_claims(causal_levels=...)`, que busca por `chunk.locator`.
+
+    Antes se devolvia indexado por `statement`: ninguna clave casaba con un
+    locator, asi que etiquetar el Evidence Pack con esta funcion no fallaba —
+    simplemente no etiquetaba nada. Un no-op silencioso en la capa que separa
+    asociacion de causa.
+    """
     out: dict[str, Optional[str]] = {}
     for c in claims:
-        out[c.statement] = classify_claim(c.statement)
+        level = classify_claim(c.statement)
+        for span in c.spans:
+            locator = span.chunk_locator
+            if not locator:
+                continue
+            # Un locator puede aportar varios claims: gana el nivel mas alto.
+            previous = out.get(locator)
+            if level and (previous is None
+                          or LEVEL_ORDER[level] > LEVEL_ORDER[previous]):
+                out[locator] = level
+            else:
+                out.setdefault(locator, previous)
     return out
 
 

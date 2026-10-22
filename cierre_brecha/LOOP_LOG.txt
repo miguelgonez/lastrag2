@@ -1,4 +1,4 @@
-✅ suite completa VERDE: 79 passed, 2 skipped, 13 warnings in 21.52s
+✅ suite completa VERDE: 109 passed, 3 skipped, 21 warnings in 34.81s
 👁️  capacidad de visión real (docling/TableFormer): SÍ
 
 === SCORECARD — cumplimiento ponderado: 100% (15 DONE + 0 PARTIAL de 15) ===
@@ -18,4 +18,4 @@
 ✅ CB-11 [ola base] Soberanía + fail-closed: DONE
 ✅ CB-9 [ola base] Pipeline E2E + audit trail: DONE
 
-Pasadas verdes consecutivas: 17/2
+Pasadas verdes consecutivas: 18/2

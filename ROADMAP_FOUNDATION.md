@@ -100,7 +100,13 @@ queda registrado como DEGRADACIÓN en la respuesta, no como PASS. El motor expon
 Hasta superar REAL_E2E_PASS, el sistema se nombra **«LastRAG 2 Foundation / pre-alpha»**.
 No se llama «LastRAG 2» a nivel de producto.
 
-## Estado de ejecución Wave 0 (6-oct-2026, verificado)
+## Estado de ejecución Wave 0 — HISTÓRICO del 6-oct-2026 (verificado ese día)
+
+> **Lectura:** esta sección es la foto del 6-oct y se conserva tal cual por
+> procedencia. Sus `UNKNOWN` y su «el gate FOUNDATION-T3 NO está superado»
+> describen el estado **de esa fecha**; quedaron resueltos el 15-oct (ver
+> «Gate — FOUNDATION-T3» arriba y «Acta completa T3» abajo). No es una
+> contradicción del documento: es su cronología.
 
 Suite completa: **26/26 PASS** (`python -m pytest tests/`): 4 smoke (contratos,
 dobles) + 9 cliente LocalLLM (contra servidor HTTP real en proceso) + 4 Qdrant
@@ -127,9 +133,11 @@ real (motor local persistente) + 5 registro de degradaciones + 3 E2E soberano.
 - Reparado: instalación editable del venv apuntaba a ruta muerta
   (`~/Documents/py/...`); reinstalada sobre la ruta real.
 
-UNKNOWN declarados (no simulados): servidor Neo4j (sin Docker/OrbStack hoy),
-endpoint de modelo real, Docling, embedder biomédico real, HTTP de FastAPI
-en transporte. El gate FOUNDATION-T3 **NO está superado**.
+UNKNOWN declarados **a 6-oct** (no simulados): servidor Neo4j (sin
+Docker/OrbStack ese día), endpoint de modelo real, Docling, embedder
+biomédico real, HTTP de FastAPI en transporte. El gate FOUNDATION-T3 **no
+estaba superado en esa fecha** (lo fue el 15-oct; el único UNKNOWN que
+sobrevive hoy es el embedder biomédico real).
 
 ## Acta completa T3 (15-oct-2026, tarde)
 
@@ -164,8 +172,33 @@ Escala de abstracts: `~/lastrag_pubmed_pilot/PLAN_ESCALA.md` (oleadas + reglas).
 
 ## Roadmap post-T3 (hallazgos FOUNDATION-T3, 6-oct-2026 — recibo b9b7d50f…)
 
-- **F1 · max_tokens acoplado a max_model_len**: el motor debe clampar/negociar `max_tokens` contra `model_metadata` del endpoint (el default 8192 provocó HTTP 400 explícito contra vLLM 4096). Estado: T3 superado con adaptador declarado; el clamp nativo es pendiente.
-- **F2 · gate PHI no reactivo a runtime**: `Settings` (dataclass) captura el env al importar; el gate no reacciona a cambios de entorno en runtime tras el primer import. Pendiente: defaults lazy o validación en construcción.
-- **F3 · política single-owner para Qdrant path=**: Qdrant local no admite dos clientes sobre el mismo path; documentar ciclo de vida de proceso (o Qdrant servidor para concurrencia).
+- **F1 · max_tokens acoplado a max_model_len** — **CERRADO (15-oct-2026)**: el
+  clamp vive en `LocalLLM._clamp_tokens` (consulta `model_metadata`, reserva
+  ~3 chars/token del prompt y deja el ajuste en `last_token_adjust`). El
+  22-oct se corrigió además la caché de la ventana, que re-consultaba
+  `/models` en cada generación contra endpoints que no la publican.
+- **F2 · gate PHI no reactivo a runtime** — **CERRADO (22-oct-2026)**:
+  `Settings` usa `default_factory`, de modo que cada construcción lee el
+  entorno vigente; el gate se aplica además por capacidad declarada
+  (`sends_data_to_cloud`) en todas las ramas del factory, y el transporte
+  `/api/upload` lo replica. Pruebas: `tests/test_auditoria_calidad.py`.
+- **F3 · política single-owner para Qdrant path=** — **ABIERTO**: Qdrant local
+  no admite dos clientes sobre el mismo path; falta documentar el ciclo de
+  vida de proceso (o pasar a Qdrant servidor para concurrencia).
 
 Nota de procedencia: estos puntos no rompen ningún gate de T3; el release acreditado permanece pineado en 22519f48 / tree 3182506b.
+
+## Auditoría de calidad (22-oct-2026)
+
+Revisión completa del árbol master: **21 defectos de código corregidos**
+(críticos: escritura arbitraria de ficheros por el nombre de subida; altos:
+degradaciones silenciosas de backend, descarte de evidencia no declarado,
+duplicación de contenido al reintentar un stream, cita con capítulo de otro
+documento, página de tabla siempre 1) y **22 pruebas de regresión** nuevas.
+Suite: 87/2 → **109 pass / 3 skip**; bucle de cierre de brecha en verde
+(15/15 DONE, N-VERDE). `CONTRACT_VERSION` sin cambios: todas las correcciones
+restauran el contrato 1.0, no lo alteran.
+
+Expediente completo, hallazgos abiertos y el punto escalado al PI (discrepancia
+de fechas de T3 en el canon, que **no** se edita por estar congelado):
+`AUDITORIA_CALIDAD_20261022.md`.

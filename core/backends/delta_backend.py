@@ -69,6 +69,17 @@ class DeltaBackend(VectorBackend):
         """Filtro por metadatos (topic, year) + léxico mínimo. El score es
         un marcador (0.5): el orden real lo decide el motor con embedder y
         rerankers — jamás se presenta como ranking semántico."""
+        try:
+            return await self._search(query, top_k=top_k,
+                                      metadata_filter=metadata_filter)
+        except Exception as exc:
+            # Contrato de degradacion: un fallo de Spark/Delta viaja declarado,
+            # nunca como "no hay evidencia".
+            return RetrievalResult(backend=self.name,
+                                   degraded_reason=f"DELTA_ERROR:{type(exc).__name__}")
+
+    async def _search(self, query: str, *, top_k: int,
+                      metadata_filter: Optional[dict[str, Any]]) -> RetrievalResult:
         from pyspark.sql.functions import col, lower
         df = self._df
         if metadata_filter:
@@ -110,10 +121,14 @@ class DeltaBackend(VectorBackend):
         self._spark.stop()
 
     async def health(self) -> dict[str, Any]:
+        # Vocabulario del contrato (base.health / QdrantBackend): UP · DOWN ·
+        # UNKNOWN. Devolver "ok"/"error" hacia que un consumidor que compara
+        # con "UP" leyera este backend como caido estando sano.
         try:
             n = self._df.count()
-            return {"status": "ok", "backend": self.name,
+            return {"status": "UP", "backend": self.name,
                     "records": n, "delta_path": self.delta_path}
         except Exception as exc:
-            return {"status": "error", "reason": f"{type(exc).__name__}",
+            return {"status": "DOWN", "backend": self.name,
+                    "reason": f"DELTA_ERROR:{type(exc).__name__}",
                     "delta_path": self.delta_path}

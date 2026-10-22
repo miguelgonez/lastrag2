@@ -14,7 +14,8 @@ from __future__ import annotations
 import asyncio
 import os
 import time
-from pathlib import Path
+from contextlib import asynccontextmanager
+from pathlib import Path, PurePosixPath
 from typing import Any, Optional
 
 from dotenv import load_dotenv
@@ -60,7 +61,20 @@ class PassthroughLastIndex:
 # Inicialización
 # ============================================================
 
-app = FastAPI(title="LastRAG v2", version="2.0.0")
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    """Arranque: intenta inicializar y, si no puede, lo DECLARA en el estado
+    (`initialized=false`) en lugar de fingir un sistema operativo.
+    (`on_event` está deprecado en FastAPI; el contrato observable no cambia.)"""
+    try:
+        await initialize()
+    except Exception as e:
+        print(f"⚠️ Error al inicializar: {e}")
+        state["initialized"] = False
+    yield
+
+
+app = FastAPI(title="LastRAG v2", version="2.0.0", lifespan=lifespan)
 
 # Estado global
 state: dict[str, Any] = {
@@ -126,15 +140,6 @@ async def initialize():
     state["initialized"] = True
     print(f"✅ LastRAG inicializado — store: {state['active_store']}")
     print(f"   Stores disponibles: {len(state['stores'])}")
-
-
-@app.on_event("startup")
-async def startup():
-    try:
-        await initialize()
-    except Exception as e:
-        print(f"⚠️ Error al inicializar: {e}")
-        state["initialized"] = False
 
 
 # ============================================================
@@ -212,21 +217,51 @@ async def switch_store(request: Request):
     return JSONResponse({"error": f"Store '{store_name}' no encontrado"}, status_code=404)
 
 
+def safe_upload_name(raw: Optional[str]) -> Optional[str]:
+    """Nombre de fichero seguro para el directorio de subidas.
+
+    El nombre llega del cliente: `upload_dir / file.filename` permitia
+    `../../…` y rutas absolutas, es decir ESCRITURA ARBITRARIA en el disco del
+    servidor. Se conserva solo el componente final y se rechaza lo que no sea
+    un nombre utilizable.
+    """
+    if not raw:
+        return None
+    name = PurePosixPath(str(raw).replace("\\", "/")).name
+    name = name.strip().strip(".")
+    if not name or name in {".", ".."} or "/" in name:
+        return None
+    return name[:180]
+
+
 @app.post("/api/upload")
 async def upload_pdf(file: UploadFile = File(...)):
     if not state["backend"]:
         return JSONResponse({"error": "Backend no inicializado"}, status_code=503)
 
+    # Gate PHI del transporte: la capa HTTP no puede ser la puerta trasera del
+    # control que el pipeline aplica. Con LASTRAG_PHI_MODE=true no se sube
+    # nada a un backend que declare salida a la nube.
+    if (os.getenv("LASTRAG_PHI_MODE", "false").lower() == "true"
+            and getattr(state["backend"], "sends_data_to_cloud", True)):
+        return JSONResponse(
+            {"error": "LASTRAG_PHI_MODE=true: backend cloud bloqueado para ingesta"},
+            status_code=403)
+
+    filename = safe_upload_name(file.filename)
+    if not filename:
+        return JSONResponse({"error": "Nombre de fichero no válido"}, status_code=400)
+
     # Guardar temporalmente
     upload_dir = Path("mnt/user-data/uploads")
     upload_dir.mkdir(parents=True, exist_ok=True)
-    dest = upload_dir / file.filename
+    dest = upload_dir / filename
     content = await file.read()
     dest.write_bytes(content)
 
     try:
         result = await state["backend"].ingest(
-            str(dest), document_id=f"doc_{Path(file.filename).stem}"
+            str(dest), document_id=f"doc_{Path(filename).stem}"
         )
         return {
             "status": result.status,

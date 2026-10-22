@@ -52,12 +52,31 @@ class FakeLastIndex:
         )]
 
 
+#: Marca del prompt del nodo `grade` (formato MCQ desde el 15-oct-2026).
+GRADE_PROMPT_MARK = "Pregunta de examen"
+
+
 class FakeLLM(LLMClient):
+    """Doble del LLM que responde el grade EN SU FORMATO (MCQ A/B) y el texto
+    configurado para la generacion.
+
+    Antes respondia prosa tambien al grade: el motor no podia parsear el
+    veredicto y TODAS las pruebas de motor atravesaban la rama
+    UNDECIDABLE_VERDICT, de modo que el camino normal del filtro de dominio
+    no estaba cubierto por ninguna prueba.
+    """
+
     name = "fake"
+
     def __init__(self, response: str = "La metformina es el tratamiento de "
-                                       "primera linea (Guia DM2, p.42)."):
+                                       "primera linea (Guia DM2, p.42).",
+                 grade: str = "A"):
         self.response_text = response
+        self.grade = grade
         self.prompts: list[str] = []
+
     async def generate(self, prompt, *, max_tokens=8192):
         self.prompts.append(prompt)
+        if GRADE_PROMPT_MARK in prompt:
+            return self.grade
         return self.response_text

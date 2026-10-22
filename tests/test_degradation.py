@@ -60,12 +60,16 @@ class FakeLastIndex:
 
 
 class GradingLLM(LLMClient):
-    """Responde RELEVANTE al prompt de grade y texto normal al resto."""
+    """Responde al grade EN SU FORMATO (MCQ: A = evidencia relevante) y texto
+    normal al resto. El marcador antiguo ("evaluador estricto") ya no existe
+    en el prompt desde el cambio a MCQ del 15-oct-2026, así que este doble
+    nunca llegaba a validar: todas estas pruebas pasaban por la rama
+    UNDECIDABLE_VERDICT sin pretenderlo."""
     name = "fake"
 
     async def generate(self, prompt, *, max_tokens=8192):
-        if "evaluador estricto" in prompt:
-            return "RELEVANTE"
+        if "Pregunta de examen" in prompt:
+            return "A"
         return "Respuesta basada en la evidencia proporcionada."
 
 
