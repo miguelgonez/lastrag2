@@ -188,6 +188,31 @@ Escala de abstracts: `~/lastrag_pubmed_pilot/PLAN_ESCALA.md` (oleadas + reglas).
 
 Nota de procedencia: estos puntos no rompen ningún gate de T3; el release acreditado permanece pineado en 22519f48 / tree 3182506b.
 
+## Política de generación: abstención grado médico (PI, 22-oct-2026)
+
+Decisión del PI (literal): *«el servicio debe tener grado médico, 0
+alucinaciones; es la garantía que diferencia a NextHealth de la competencia.
+Si no lo sabe, lo dice, antes de inventar.»*
+
+Aplicación en el motor (commit de esta fecha): el fallback «responder desde
+conocimiento general con aviso» deja de ser el default. Dos capas por CÓDIGO:
+(1) sin evidencia el LLM ni se consulta → abstención determinista;
+(2) una salida auto-declarada como conocimiento general se bloquea y se
+sustituye por la abstención, declarada en `degradations[]` y registrada como
+`UNSUPPORTED_GENERATION`. Opt-in legacy: `allow_general_knowledge=True`,
+siempre visible en `features.generation_policy`. Salida nueva aditiva:
+`abstained` (incluye el gate causal). `CONTRACT_VERSION` se mantiene en 1.0
+(superficie intacta; el cambio de default queda declarado aquí y en
+`FOUNDATION_VERSION.json`; los consumidores de FORKS.md portan copias de la
+era v2.0.0 y no se ven afectados hasta que rebasen).
+
+**Qué queda para poder reclamar «0 alucinaciones» a nivel de frase** (no se
+reclama hoy): verificador claim↔span post-generación sobre `rag/pack.py`
+(los spans ya son verificables por construcción) + benchmark con corpus real
+y tasa medida de *unsupported claims* (métrica ya prevista en Wave 1).
+Controles ejercitados: `tests/test_abstencion_grado_medico.py` (permitido +
+bloqueados).
+
 ## Auditoría de calidad (22-oct-2026)
 
 Revisión completa del árbol master: **21 defectos de código corregidos**

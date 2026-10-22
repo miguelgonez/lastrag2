@@ -97,11 +97,43 @@ PI del 6-oct-2026: «arquitectura diseñada» ≠ «sistema validado»).
 - **Gate FOUNDATION-T3 = REAL_E2E_PASS: ACREDITADO el 15-oct-2026** en el Spark
   (ALIA real por vLLM + Neo4j real, cadena completa sin mocks, los 9 controles
   cubiertos). Detalle y acta en `ROADMAP_FOUNDATION.md`.
+- **Política de generación: abstención grado médico (default, PI 22-oct-2026)**
+  — «si no lo sabe, lo dice, antes de inventar». Ver sección siguiente.
 - **Suite: 109 pass / 3 skip declarados** (22-oct, MBP) tras la auditoría de
   calidad: 21 defectos corregidos y 22 regresiones añadidas
   (`AUDITORIA_CALIDAD_20261022.md`).
 - **Pendiente para la capa C («LastRAG 2.0»)**: embedder biomédico real y
   Wave 1 fase 2 (baseline `LastRAG-MD stable-v1.0` con su propio arnés).
+
+## Abstención grado médico (default desde el 22-oct-2026)
+
+Decisión del PI: el servicio responde con evidencia o **se abstiene** —
+responder «desde conocimiento general» deja de ser un fallback del motor.
+La garantía es **código, no prosa del prompt** (mismo principio que el
+CausalGate), en dos capas:
+
+1. **Sin evidencia** (ni local, ni grafo, ni externa) **el LLM ni se
+   consulta**: el motor devuelve una abstención determinista
+   (`ABSTENTION_RESPONSE`, confianza 0.0, `abstained=true`).
+2. **Bloqueo post-generación**: si aun con evidencia el modelo emite una
+   respuesta auto-declarada «desde conocimiento general», el motor **no la
+   entrega**: la sustituye por la abstención, lo declara en `degradations[]`
+   (`GENERAL_KNOWLEDGE_BLOCKED`) y lo registra en el failure graph
+   (`UNSUPPORTED_GENERATION`).
+
+Toda respuesta declara su política en `features.generation_policy` y toda
+abstención (sin evidencia, bloqueo o gate causal) es distinguible en el campo
+`abstained`. El comportamiento anterior (aviso «⚠️ conocimiento médico
+general» con confianza capada) queda como **opt-in explícito** para
+despliegues no clínicos: `LastRAGEngine(..., allow_general_knowledge=True)`.
+
+**Límite declarado (sin esto, el claim sería falso):** estas capas garantizan
+«sin evidencia no hay respuesta» y «una salida auto-declarada como
+conocimiento general no se entrega». **No** verifican frase a frase la
+generación contra los spans del Evidence Pack; «0 alucinaciones» a nivel de
+frase exige ese verificador (trabajo futuro sobre `rag/pack.py`, que ya ancla
+spans verificables) y benchmark con corpus real. Pruebas del control (caso
+permitido + bloqueados): `tests/test_abstencion_grado_medico.py`.
 
 Contratos implementados (test de humo en verde, con dobles):
 - Interfaz `VectorBackend` + modelos de citación.

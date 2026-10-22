@@ -45,6 +45,33 @@ from .multimodal import boost_multimodal
 
 
 # ============================================================
+# Politica de generacion — grado medico (decision del PI, 22-oct-2026)
+# ============================================================
+# «Si no lo sabe, lo dice, antes de inventar.» La garantia de cero invencion
+# es CODIGO, no prosa del LLM (mismo principio que el CausalGate):
+#   1. Sin evidencia (chunks/grafo/externa) el LLM NI SE CONSULTA: el motor
+#      devuelve esta abstencion determinista.
+#   2. Si aun con evidencia el modelo intenta responder desde conocimiento
+#      general, el motor BLOQUEA esa salida y la sustituye por la abstencion,
+#      declarandolo en degradations[] y en el failure graph.
+# El comportamiento anterior (responder desde conocimiento general con aviso
+# declarado) queda como opt-in explicito: allow_general_knowledge=True.
+
+ABSTENTION_RESPONSE = (
+    "⛔ **Abstención (grado médico).** No dispongo de evidencia suficiente en "
+    "los documentos indexados para responder a esta consulta con garantías. "
+    "Este sistema no responde desde conocimiento general: sin evidencia "
+    "verificable, lo dice."
+)
+
+# Marcadores de respuesta "desde conocimiento general" (el header que impone
+# el prompt legacy y su frase nuclear). El rechazo de dominio no esta aqui:
+# rehusar una consulta no medica no es inventar.
+_GENERAL_KNOWLEDGE_MARKS = ("⚠️ **Aviso:**", "conocimiento médico general",
+                            "conocimiento medico general")
+
+
+# ============================================================
 # Router (Hermes) — heuristicas explicitas y medibles
 # ============================================================
 
@@ -107,6 +134,11 @@ class LastRAGEngine:
         build_pack: bool = False,          # Ola 2: Evidence Pack 2.0 + conflict + causal
         temporal_meta: Optional[dict] = None,  # Ola 2: {locator: {valid_from,...}}
         failure_graph: Optional[FailureGraph] = None,  # Ola 5
+        # Grado medico (default): sin evidencia -> abstencion deterministica;
+        # salida "desde conocimiento general" -> bloqueada por codigo.
+        # True = comportamiento legacy (aviso declarado), solo para despliegues
+        # NO clinicos y siempre visible en features["generation_policy"].
+        allow_general_knowledge: bool = False,
     ):
         self.backend = backend
         self.lastindex = lastindex
@@ -122,6 +154,7 @@ class LastRAGEngine:
         self.build_pack = build_pack
         self.temporal_meta = temporal_meta
         self.failure_graph = failure_graph or FailureGraph()
+        self.allow_general_knowledge = allow_general_knowledge
         self._causal_gate = CausalGate()
         self._conflict_engine = ConflictEngine()
         self.app = self._build()
@@ -455,6 +488,23 @@ Responde con una sola letra: A o B. Nada más.
         active_graph = state.get("active_graph", [])
         external = state.get("external_context", "")
         feats = dict(state.get("features") or {})
+        feats["generation_policy"] = ("general_knowledge_declared"
+                                      if self.allow_general_knowledge
+                                      else "abstain")
+
+        # Capa 1 del grado medico: sin NINGUNA evidencia (local, grafo ni
+        # externa) no hay nada que generar — el LLM no se consulta y la
+        # abstencion es deterministica. "Si no lo sabe, lo dice."
+        has_evidence = bool(chunks) or bool(active_graph) or bool(external.strip())
+        if not self.allow_general_knowledge and not has_evidence:
+            feats["abstention"] = {
+                "kind": "no_evidence",
+                "detail": "sin evidencia local, de grafo ni externa; "
+                          "generacion no ejecutada (deterministico)",
+            }
+            print("⛔ [generate] abstención por falta de evidencia (sin llamada al LLM)")
+            return {"response": ABSTENTION_RESPONSE, "confidence": 0.0,
+                    "is_general_knowledge": False, "features": feats}
 
         pack_render = None
         if self.build_pack and chunks:
@@ -496,6 +546,8 @@ Responde con una sola letra: A o B. Nada más.
                         "UNSUPPORTED_GENERATION",
                         detail=f"causal_gate bloqueó recomendación "
                                f"(best={verdict.best_level})")
+                feats["abstention"] = {"kind": "causal_gate",
+                                       "reason": verdict.reason}
                 return {"response": abstention, "confidence": 0.05,
                         "is_general_knowledge": False, "features": feats}
 
@@ -512,8 +564,37 @@ Responde con una sola letra: A o B. Nada más.
         if active_graph:
             graph_context = "\n".join(f"- [{n.get('type', '?')}] {n.get('name', '?')}: {n.get('desc', 'Sin descripción')}" for n in active_graph)
 
-        prompt = self._prompt(state["query"], evidence, citations, external, graph_context)
+        prompt = self._prompt(state["query"], evidence, citations, external,
+                              graph_context, self.allow_general_knowledge)
         text = await self.llm.generate(prompt)
+
+        # Capa 2 del grado medico: si el modelo intento responder desde
+        # conocimiento general pese al prompt, esa salida NO se entrega.
+        # El bloqueo es codigo, queda declarado y registrado.
+        if not self.allow_general_knowledge and self._admits_general(text):
+            print("⛔ [generate] salida desde conocimiento general BLOQUEADA")
+            feats["abstention"] = {"kind": "general_knowledge_blocked",
+                                   "blocked_preview": text.strip()[:120]}
+            if self.failure_graph:
+                self.failure_graph.record(
+                    "UNSUPPORTED_GENERATION",
+                    detail="salida desde conocimiento general bloqueada "
+                           "por la politica de abstencion")
+            entry = {"component": "generation",
+                     "reason": "GENERAL_KNOWLEDGE_BLOCKED",
+                     "effect": "response_replaced_by_abstention"}
+            return {"response": ABSTENTION_RESPONSE, "confidence": 0.0,
+                    "is_general_knowledge": False, "features": feats,
+                    "degradations": self._decl(state, entry)}
+
+        # El modelo siguio la instruccion de abstenerse (evidencia presente
+        # pero insuficiente): se normaliza al texto canonico y confianza 0.
+        if "⛔ **Abstención (grado médico)" in text:
+            feats["abstention"] = {"kind": "model_declared",
+                                   "detail": "el modelo declaro evidencia insuficiente"}
+            print("⛔ [generate] abstención declarada por el modelo")
+            return {"response": ABSTENTION_RESPONSE, "confidence": 0.0,
+                    "is_general_knowledge": False, "features": feats}
 
         confidence, is_general = self._score(text, chunks, external)
         print(f"🧠 [generate] conf={confidence:.0%} general={is_general}")
@@ -523,6 +604,14 @@ Responde con una sola letra: A o B. Nada más.
             "is_general_knowledge": is_general,
             "features": feats,
         }
+
+    @staticmethod
+    def _admits_general(text: str) -> bool:
+        """True si la salida se declara basada en conocimiento general (el
+        header del aviso legacy o su frase nuclear). El rechazo de consultas
+        no medicas NO cuenta: rehusar no es inventar."""
+        low = text.lower()
+        return any(m.lower() in low for m in _GENERAL_KNOWLEDGE_MARKS)
 
     # --- Construccion del grafo ---
     def _build(self):
@@ -597,6 +686,9 @@ Responde con una sola letra: A o B. Nada más.
             "response": final["response"],
             "confidence": final["confidence"],
             "is_general_knowledge": final["is_general_knowledge"],
+            # Grado medico: toda abstencion (sin evidencia, bloqueo de
+            # conocimiento general o gate causal) es distinguible aqui.
+            "abstained": bool(features.get("abstention")),
             "route": final["route"],
             "route_effective": final.get("route_effective") or final["route"],
             "degradations": final.get("degradations", []),
@@ -624,7 +716,28 @@ Responde con una sola letra: A o B. Nada más.
         return fuse_by_locator(b, a)
 
     @staticmethod
-    def _prompt(query: str, evidence: str, citations: str, external: str, graph_context: str) -> str:
+    def _prompt(query: str, evidence: str, citations: str, external: str,
+                graph_context: str, allow_general_knowledge: bool = False) -> str:
+        if allow_general_knowledge:
+            # Legacy (opt-in, despliegues NO clinicos): conocimiento general
+            # permitido solo con el aviso declarado que el scorer capa.
+            regla_sin_evidencia = (
+                '4. Si la consulta SÍ es médica, pero la evidencia proporcionada '
+                'es insuficiente o nula, responde a la consulta utilizando tu '
+                'conocimiento médico general, iniciando tu respuesta EXACTAMENTE '
+                'con: "⚠️ **Aviso:** No se encontró evidencia en los documentos '
+                'indexados. Esta respuesta se basa en conocimiento médico general."'
+            )
+        else:
+            # Grado medico (default): sin evidencia suficiente -> abstencion.
+            # (La garantia real no es esta frase: es el gate por codigo que
+            # bloquea cualquier salida "desde conocimiento general".)
+            regla_sin_evidencia = (
+                f'4. Si la consulta SÍ es médica pero la evidencia proporcionada '
+                f'es insuficiente o nula, NO respondas desde tu conocimiento '
+                f'general. Responde EXACTAMENTE: "{ABSTENTION_RESPONSE}" '
+                f'No añadas nada más.'
+            )
         return f"""Eres un asistente medico experto. Responde la consulta usando
 la evidencia proporcionada. Procesa evidencia en cualquier idioma y responde
 en el idioma de la consulta.
@@ -648,7 +761,7 @@ en el idioma de la consulta.
 1. Responde de forma completa y estructurada.
 2. CITA usando exclusivamente las citaciones proporcionadas.
 3. Si la consulta NO tiene ninguna relación con medicina o salud clínica (por ejemplo, urbanismo, leyes, recetas de cocina, etc.) y la evidencia es nula, DEBES RECHAZAR la consulta respondiendo EXACTAMENTE: "Lo siento, soy un asistente médico clínico. Mi base de datos y conocimientos están restringidos estrictamente al ámbito de la salud. No puedo responder a consultas sobre temas no médicos." No añadas nada más.
-4. Si la consulta SÍ es médica, pero la evidencia proporcionada es insuficiente o nula, responde a la consulta utilizando tu conocimiento médico general, iniciando tu respuesta EXACTAMENTE con: "⚠️ **Aviso:** No se encontró evidencia en los documentos indexados. Esta respuesta se basa en conocimiento médico general."
+{regla_sin_evidencia}
 5. NUNCA inventes información médica. Cíñete ESTRICTAMENTE a la evidencia proporcionada cuando esté disponible.
 """
 

@@ -15,6 +15,14 @@
     "Embedder inyectable etiquetado (embedding_model en payload)",
     "Contrato de degradacion: todo fallback declarado, jamas silencioso"
   ],
+  "generation_policy": {
+    "default": "abstain",
+    "decided_by": "PI, 2026-10-22: 'grado medico, 0 alucinaciones; si no lo sabe, lo dice, antes de inventar'",
+    "enforcement": "codigo, dos capas: sin evidencia el LLM no se consulta (abstencion deterministica); salida auto-declarada 'desde conocimiento general' bloqueada y sustituida, declarada en degradations[] y en el failure graph",
+    "legacy_opt_in": "allow_general_knowledge=True (solo despliegues no clinicos; visible en features.generation_policy)",
+    "claim_limits": "garantiza 'sin evidencia no hay respuesta' y 'salida general-knowledge no se entrega'; NO verifica frase a frase contra spans (verificador claim<->span pendiente). '0 alucinaciones' a nivel de frase NO se reclama acreditado hoy.",
+    "tests": "tests/test_abstencion_grado_medico.py (permitido + bloqueados)"
+  },
   "state_pin": {
     "release_commit": "22519f48122e2e6fc306d2e798d13849ff4000cb",
     "git_tree_sha1": "3182506b1b10569aaba067b3a0607c6c853d1f2d",
