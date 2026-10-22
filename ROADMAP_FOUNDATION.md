@@ -221,13 +221,34 @@ pieza MÁS DÉBIL de la familia: era el único que respondía desde conocimiento
 general por defecto. Se porta como mejora horizontal (regla 3 del
 procedimiento de fork) para que ningún producto futuro la reinvente.
 
-**Qué queda para reclamar «0 alucinaciones» sobre paráfrasis** (no se reclama
-hoy): el anclaje es literal, no semántico — verifica datos duros y citas, no
-equivalencia de sentido. Hace falta verificador semántico claim↔span y
-benchmark con tasa medida de *unsupported claims* (métrica ya prevista en
-Wave 1). Controles ejercitados (permitido + bloqueado por capa):
-`tests/test_abstencion_grado_medico.py` (8) y
-`tests/test_anclaje_claim_evidencia.py` (16).
+**Capa 4 — verificador claim↔evidencia (orden del PI, mismo día: «antes
+debes desarrollar el verificador»):** `core/rag/verifier.py`. Cada frase
+asertiva de la respuesta, con o sin cifras, se contrasta con la evidencia
+congelada (misma `EvidenceFreeze` que la capa 3). Veredicto por claim con su
+span: SUPPORTED · UNSUPPORTED (se retira con marca) · CONTRADICTED (retiene
+la respuesta) · META (no cuenta). Métodos declarados con disponibilidad
+real: léxico (siempre; solapamiento morfológico + polaridad + dirección ↑/↓),
+semántico (embedder inyectado; nunca decide solo ni anula una contradicción)
+y juez (LLM soberano, MCQ A/B/C; A respalda, B contradice, C/ilegible NO
+fuerzan nada: decide el código).
+
+*Medido* (`run_verifier_benchmark`, 14 casos con ground truth): **fugas 0**
+con el léxico solo; **falsos bloqueos 2/6** (paráfrasis fuertes) que el juez
+cierra a **0/6 sin fugas** (juez simulado por reglas en la suite). Estado de
+los métodos en el MBP hoy: semántico UNAVAILABLE (sin modelo FastEmbed
+multilingüe descargado; ~470 MB, requiere autorización) · juez UNAVAILABLE
+(sin endpoint; ALIA vive en el Spark). Integración: `verification="block"`
+por defecto; `verification_judge=True` usa el LLM del motor como juez.
+
+**Pendiente para cerrar el expediente del verificador con modelo real:**
+(1) re-ejecutar `tests/test_e2e_sovereign.py` en el Spark con ALIA como
+juez — el E2E del 15-oct es ANTERIOR a las capas 3-4 y su acta no las cubre;
+(2) descargar FastEmbed multilingüe y medir el método semántico;
+(3) tasa de falsos bloqueos sobre las 24 consultas congeladas de Wave 1.
+Controles ejercitados (permitido + bloqueado por capa):
+`tests/test_abstencion_grado_medico.py` (8),
+`tests/test_anclaje_claim_evidencia.py` (16) y
+`tests/test_verificador_claims.py` (22).
 
 **Alcance NextHealth:** la doctrina `NH-GRADO-MEDICO-001` (marco ADLC) aplica
 a todo producto, no solo a este motor, con su matriz de estado por producto

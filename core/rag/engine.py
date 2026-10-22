@@ -43,6 +43,7 @@ from .causal import CausalGate, classify_claim
 from .failure_graph import classify_absence, FailureGraph
 from .multimodal import boost_multimodal
 from .grounding import freeze_evidence, strip_fabricated_quotes, verify_grounding
+from .verifier import ClaimVerifier, redact as redact_unsupported
 
 
 # ============================================================
@@ -58,6 +59,9 @@ from .grounding import freeze_evidence, strip_fabricated_quotes, verify_groundin
 #   3. ANCLAJE (grounding.py): la evidencia se CONGELA antes de generar y cada
 #      dato duro de la respuesta (valor+unidad, dosis, porcentaje) y cada cita
 #      textual se verifica CONTRA ESA EVIDENCIA. Lo no anclado no se entrega.
+#   4. VERIFICACION claim<->evidencia (verifier.py): cada frase asertiva, con
+#      o sin cifras, debe tener respaldo en un fragmento congelado. Lo no
+#      respaldado se RETIRA con marca; una contradiccion RETIENE la respuesta.
 # El comportamiento anterior (responder desde conocimiento general con aviso
 # declarado) queda como opt-in explicito: allow_general_knowledge=True.
 
@@ -66,6 +70,13 @@ ABSTENTION_RESPONSE = (
     "los documentos indexados para responder a esta consulta con garantías. "
     "Este sistema no responde desde conocimiento general: sin evidencia "
     "verificable, lo dice."
+)
+
+UNVERIFIED_RESPONSE = (
+    "⛔ **Respuesta retenida (verificación claim↔evidencia).** Se recuperó "
+    "evidencia, pero la respuesta generada contradice o no está respaldada por "
+    "los fragmentos recuperados. No se entrega una afirmación que la evidencia "
+    "no sostenga: consulta los fragmentos citados o acota la pregunta."
 )
 
 UNGROUNDED_RESPONSE = (
@@ -157,6 +168,16 @@ class LastRAGEngine:
         #              estado de anclaje (para dominios aun sin calibrar).
         #   "off":     solo para forks que implementen su propio verificador.
         grounding: str = "block",
+        # Capa 4: verificacion claim<->evidencia (parafrasis incluida).
+        #   "block"   (default): UNSUPPORTED se retira con marca; CONTRADICTED
+        #             o nada respaldado => respuesta retenida.
+        #   "declare": se entrega integra con el veredicto por claim declarado.
+        #   "off":     solo para forks con verificador propio.
+        verification: str = "block",
+        claim_verifier: Optional[ClaimVerifier] = None,
+        # True => el LLM del motor actua tambien como juez de implicacion
+        # (MCQ A/B/C, fail-closed). Cuesta una llamada por claim y fragmento.
+        verification_judge: bool = False,
     ):
         self.backend = backend
         self.lastindex = lastindex
@@ -176,6 +197,12 @@ class LastRAGEngine:
         if grounding not in ("block", "declare", "off"):
             raise ValueError(f"grounding desconocido: {grounding}")
         self.grounding = grounding
+        if verification not in ("block", "declare", "off"):
+            raise ValueError(f"verification desconocido: {verification}")
+        self.verification = verification
+        self.claim_verifier = claim_verifier or ClaimVerifier()
+        if verification_judge and self.claim_verifier.judge is None:
+            self.claim_verifier.judge = self.llm
         self._causal_gate = CausalGate()
         self._conflict_engine = ConflictEngine()
         self.app = self._build()
@@ -608,10 +635,14 @@ Responde con una sola letra: A o B. Nada más.
                     "is_general_knowledge": False, "features": feats,
                     "degradations": self._decl(state, entry)}
 
+        # Una sola congelacion para las capas 3 y 4: mismo conjunto exacto de
+        # evidencia, mismo evidence_hash en ambos informes.
+        freeze = freeze_evidence(chunks) if chunks else None
+
         # Capa 3: anclaje contra la evidencia CONGELADA antes de generar.
-        if self.grounding != "off" and chunks:
+        if self.grounding != "off" and freeze is not None:
             text, grounding_update = self._enforce_grounding(state, text, chunks,
-                                                             feats)
+                                                             feats, freeze)
             if grounding_update is not None:
                 return grounding_update
 
@@ -624,8 +655,26 @@ Responde con una sola letra: A o B. Nada más.
             return {"response": ABSTENTION_RESPONSE, "confidence": 0.0,
                     "is_general_knowledge": False, "features": feats}
 
+        # Capa 4: verificacion claim<->evidencia (parafrasis incluida).
+        confidence_cap = 1.0
+        extra_degradations: list[dict] = []
+        if self.verification != "off" and freeze is not None:
+            text, verification_update, confidence_cap, extra_degradations = \
+                await self._enforce_verification(state, text, feats, freeze)
+            if verification_update is not None:
+                return verification_update
+
         confidence, is_general = self._score(text, chunks, external)
+        confidence = min(confidence, confidence_cap)
         print(f"🧠 [generate] conf={confidence:.0%} general={is_general}")
+        if extra_degradations:
+            return {
+                "response": text,
+                "confidence": confidence,
+                "is_general_knowledge": is_general,
+                "features": feats,
+                "degradations": [*state.get("degradations", []), *extra_degradations],
+            }
         return {
             "response": text,
             "confidence": confidence,
@@ -634,14 +683,14 @@ Responde con una sola letra: A o B. Nada más.
         }
 
     def _enforce_grounding(self, state: RAGState, text: str,
-                           chunks: list[EvidenceChunk], feats: dict
+                           chunks: list[EvidenceChunk], feats: dict, freeze
                            ) -> tuple[str, Optional[dict]]:
-        """Capa 3: congela la evidencia y verifica el anclaje de la respuesta.
+        """Capa 3: verifica el anclaje de la respuesta contra la evidencia
+        congelada.
 
         Devuelve (texto, update_o_None). Si el update no es None, ES la
         respuesta final: en modo `block` lo no anclado no se entrega.
         """
-        freeze = freeze_evidence(chunks)
         report = verify_grounding(text, freeze)
         feats["grounding"] = {**report.to_dict(), "policy": self.grounding}
 
@@ -686,6 +735,76 @@ Responde con una sola letra: A o B. Nada más.
         return text, {"response": UNGROUNDED_RESPONSE, "confidence": 0.0,
                       "is_general_knowledge": False, "features": feats,
                       "degradations": self._decl(state, entry)}
+
+    async def _enforce_verification(self, state: RAGState, text: str,
+                                    feats: dict, freeze
+                                    ) -> tuple[str, Optional[dict], float, list[dict]]:
+        """Capa 4: cada frase asertiva debe tener respaldo en la evidencia
+        congelada. Devuelve (texto, update_o_None, tope_de_confianza,
+        degradaciones_extra). Si el update no es None, ES la respuesta final.
+        """
+        # El rechazo de dominio es una plantilla impuesta por el prompt (regla
+        # 3), no una afirmacion sobre la evidencia: no hay claim que verificar.
+        if "soy un asistente médico clínico" in text.lower():
+            feats["verification"] = {"state": "domain_refusal",
+                                     "policy": self.verification,
+                                     "n_claims": 0}
+            return text, None, 1.0, []
+
+        report = await self.claim_verifier.verify(text, freeze)
+        feats["verification"] = {**report.to_dict(), "policy": self.verification}
+
+        if report.clean:
+            return text, None, 1.0, []
+
+        if self.verification == "declare":
+            entry = {"component": "verification",
+                     "reason": "UNSUPPORTED_CLAIMS_DECLARED",
+                     "effect": "answer_served_with_claim_verdicts",
+                     "state": report.state,
+                     "unsupported": len(report.unsupported),
+                     "contradicted": len(report.contradicted)}
+            return text, None, report.supported_ratio, [entry]
+
+        # modo "block"
+        blocked_reason = None
+        if report.contradicted:
+            # Invertir la evidencia anula la confianza en el resto del texto.
+            blocked_reason, kind = "CLAIMS_CONTRADICTED_BLOCKED", "contradicted_blocked"
+        elif not report.supported:
+            blocked_reason, kind = "NO_SUPPORTED_CLAIMS_BLOCKED", "unsupported_blocked"
+        if blocked_reason:
+            print(f"⛔ [verification] respuesta RETENIDA ({report.state}): "
+                  f"{len(report.contradicted)} contradicciones, "
+                  f"{len(report.unsupported)} sin respaldo")
+            if self.failure_graph:
+                self.failure_graph.record(
+                    "UNSUPPORTED_GENERATION",
+                    detail=f"verificacion {report.state}: "
+                           f"{len(report.contradicted)} contradicciones, "
+                           f"{len(report.unsupported)} claims sin respaldo")
+            feats["abstention"] = {"kind": kind, "state": report.state,
+                                   "blocked_preview": text.strip()[:120]}
+            entry = {"component": "verification", "reason": blocked_reason,
+                     "effect": "response_replaced_by_abstention",
+                     "state": report.state,
+                     "unsupported": len(report.unsupported),
+                     "contradicted": len(report.contradicted)}
+            return text, {"response": UNVERIFIED_RESPONSE, "confidence": 0.0,
+                          "is_general_knowledge": False, "features": feats,
+                          "degradations": self._decl(state, entry)}, 0.0, []
+
+        # Parcial: lo respaldado se entrega, lo no respaldado se retira con marca.
+        redacted, n = redact_unsupported(text, report)
+        print(f"✂️  [verification] {n} afirmacion(es) retirada(s) sin respaldo")
+        if self.failure_graph:
+            self.failure_graph.record(
+                "UNSUPPORTED_GENERATION",
+                detail=f"{n} claims sin respaldo retirados (parcial)")
+        entry = {"component": "verification", "reason": "UNSUPPORTED_CLAIMS_REDACTED",
+                 "effect": "claims_removed_with_visible_mark",
+                 "redacted": n, "supported_ratio": round(report.supported_ratio, 3)}
+        return redacted, None, report.supported_ratio, [entry]
 
     @staticmethod
     def _admits_general(text: str) -> bool:

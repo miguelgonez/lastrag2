@@ -17,13 +17,20 @@
   ],
   "generation_policy": {
     "policy_id": "NH-GRADO-MEDICO-001 v1.0.0 (marco ADLC; aplica a todo producto NextHealth)",
-    "default": "abstain + grounding=block",
+    "default": "abstain + grounding=block + verification=block",
+    "verifier": {
+      "module": "core/rag/verifier.py (capa 4)",
+      "verdicts": "SUPPORTED | UNSUPPORTED (frase retirada con marca) | CONTRADICTED (respuesta retenida) | META",
+      "methods": "lexical (siempre) · semantic (embedder inyectado, nunca decide solo) · judge (LLM soberano MCQ A/B/C, fail-closed); cada uno declarado con disponibilidad real en features.verification.methods",
+      "benchmark": "run_verifier_benchmark: 14 casos sintéticos con ground truth. fugas=0 con lexical solo; falsos bloqueos 2/6 (parafrasis fuertes) -> 0/6 con juez (simulado por reglas en la suite)",
+      "unknown_today": "calidad con ALIA real como juez (Spark) y con FastEmbed multilingue (modelo no descargado); tasa de falsos bloqueos en produccion"
+    },
     "decided_by": "PI, 2026-10-22: 'grado medico, 0 alucinaciones; si no lo sabe, lo dice, antes de inventar'",
     "enforcement": "codigo, tres capas: (1) sin evidencia el LLM no se consulta (abstencion deterministica); (2) salida auto-declarada 'desde conocimiento general' bloqueada y sustituida; (3) anclaje claim<->evidencia congelada (core/rag/grounding.py): dato duro o cita textual sin respaldo literal => respuesta retenida. Todo declarado en degradations[] y en el failure graph",
     "legacy_opt_in": "allow_general_knowledge=True y/o grounding='declare'|'off' (solo despliegues no clinicos; visible en features.generation_policy y features.grounding)",
     "provenance": "la capa 3 es un port horizontal de los forks AESPLA-PRL (lastrag2.py) y FIMABIS (sovereign.py), donde ya operaba: el upstream era la pieza mas debil de la familia",
-    "claim_limits": "el anclaje es LITERAL (datos duros con unidad, dosis, porcentajes y citas textuales), no semantico. Una frase sin datos duros pasa por ausencia de material verificable (estado sin_claims_duros), que NO es un PASS. '0 alucinaciones' sobre parafrasis NO se reclama acreditado hoy: exige verificador semantico y benchmark con tasa medida de unsupported claims.",
-    "tests": "tests/test_abstencion_grado_medico.py (8) + tests/test_anclaje_claim_evidencia.py (16): caso permitido y caso bloqueado por capa"
+    "claim_limits": "lo que el codigo sostiene: ninguna frase llega al usuario sin respaldo verificado en la evidencia congelada y toda retirada queda declarada. Lo que NO sostiene: que la evidencia sea verdadera, ni la tasa de falsos bloqueos en produccion (sin embedder ni juez la parafrasis fuerte se retira: medido 2/6 en sintetico). El E2E acreditado del 15-oct es anterior a las capas 3-4: UNKNOWN con modelo real hasta re-ejecutarlo en el Spark.",
+    "tests": "tests/test_abstencion_grado_medico.py (8) + tests/test_anclaje_claim_evidencia.py (16) + tests/test_verificador_claims.py (22): caso permitido y caso bloqueado por capa y por metodo"
   },
   "state_pin": {
     "release_commit": "22519f48122e2e6fc306d2e798d13849ff4000cb",

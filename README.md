@@ -128,21 +128,48 @@ CausalGate), en dos capas:
    modos `"declare"` (entrega retirando citas fabricadas y declarando el
    estado) y `"off"` (solo para forks con verificador propio).
 
+4. **Verificación claim ↔ evidencia** (`core/rag/verifier.py`): cada frase
+   asertiva de la respuesta —**con o sin cifras**— debe tener respaldo en un
+   fragmento de la misma evidencia congelada (mismo `evidence_hash`). Tres
+   métodos, siempre declarados con su disponibilidad real: **léxico**
+   (siempre: solapamiento con tolerancia morfológica + polaridad + dirección
+   ↑/↓), **semántico** (si se inyecta un embedder; nunca decide solo) y
+   **juez** (si se inyecta el LLM soberano: MCQ A/B/C, fail-closed). Veredicto
+   por claim con su span: `SUPPORTED` · `UNSUPPORTED` → la frase se **retira**
+   con marca visible · `CONTRADICTED` → la respuesta se **retiene** · `META`
+   (no cuenta). Si nada queda respaldado, se retiene. Modos `block` (default),
+   `declare`, `off`; `verification_judge=True` activa el juez con el LLM del
+   motor.
+
 Toda respuesta declara su política en `features.generation_policy`, su estado
-de anclaje en `features.grounding` y toda abstención (sin evidencia, bloqueo,
-no anclada o gate causal) es distinguible en el campo `abstained`. El
+de anclaje en `features.grounding`, el veredicto por claim en
+`features.verification` y toda abstención (sin evidencia, bloqueo, no anclada,
+no respaldada, contradicha o gate causal) es distinguible en el campo
+`abstained`.
+
+**Medición del verificador** (`core.rag.verifier.run_verifier_benchmark`,
+14 casos sintéticos con ground truth): la métrica de grado médico es
+**fugas = 0** (ningún claim inventado o contradicho pasa como respaldado) y
+se cumple con el método léxico solo; el coste del fail-closed sin modelo
+semántico es **2/6 falsos bloqueos** (las dos paráfrasis fuertes sin términos
+compartidos), que el juez cierra a **0/6 sin abrir fugas** (juez simulado por
+reglas en la suite; con ALIA real: UNKNOWN hasta ejecutarse en el Spark). El
 comportamiento anterior (aviso «⚠️ conocimiento médico general» con confianza
 capada) queda como **opt-in explícito** para despliegues no clínicos:
 `LastRAGEngine(..., allow_general_knowledge=True)`.
 
-**Límite declarado (sin esto, el claim sería falso):** el anclaje es
-**literal**, no semántico: verifica que los datos duros y las citas consten en
-la evidencia. Una frase sin datos duros ni citas pasa por **ausencia de
-material verificable** (estado `sin_claims_duros`), que no es un PASS.
-Reclamar «0 alucinaciones» sobre paráfrasis exigiría un verificador semántico
-y benchmark con tasa medida de *unsupported claims*: no se reclama hoy.
-Pruebas del control (caso permitido + casos bloqueados):
-`tests/test_abstencion_grado_medico.py` y `tests/test_anclaje_claim_evidencia.py`.
+**Límite declarado (sin esto, el claim sería falso):** el verificador
+comprueba que cada afirmación esté **respaldada por la evidencia recuperada**;
+no comprueba que la evidencia sea verdadera (si el corpus está equivocado, un
+claim respaldado sigue estando equivocado) ni sustituye la revisión humana.
+Sin embedder ni juez, la paráfrasis fuerte se **retira** (falso bloqueo
+declarado), nunca se entrega sin verificar. La afirmación «0 alucinaciones»
+que hoy sostiene el código es: *ninguna frase llega al usuario sin respaldo
+verificado en la evidencia congelada, y toda retirada queda declarada*. Lo que
+sigue pendiente de medir con corpus y modelo reales es la tasa de falsos
+bloqueos en producción. Pruebas (caso permitido + casos bloqueados):
+`tests/test_abstencion_grado_medico.py`, `tests/test_anclaje_claim_evidencia.py`
+y `tests/test_verificador_claims.py`.
 
 Doctrina NextHealth aplicable a **todo producto** (no solo a este motor):
 `NH-GRADO-MEDICO-001`, en el marco ADLC — ver `FORKS.md` para la ruta.

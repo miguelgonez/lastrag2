@@ -44,7 +44,9 @@ class CountingLLM(LLMClient):
     """Cuenta llamadas; distingue grade (MCQ) de generación."""
     name = "counting"
 
-    def __init__(self, generation="Respuesta con la evidencia (Guia DM2, p.42)."):
+    # La generación del doble debe ser una afirmación REAL respaldada por el
+    # corpus de FakeBackend: la capa 4 verifica claims, también en las pruebas.
+    def __init__(self, generation="La metformina es primera linea en DM2 (Guia DM2, p.42)."):
         self.generation = generation
         self.grade_calls = 0
         self.generation_calls = 0
