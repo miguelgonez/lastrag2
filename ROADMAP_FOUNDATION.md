@@ -240,6 +240,28 @@ multilingüe descargado; ~470 MB, requiere autorización) · juez UNAVAILABLE
 (sin endpoint; ALIA vive en el Spark). Integración: `verification="block"`
 por defecto; `verification_judge=True` usa el LLM del motor como juez.
 
+**Capa 5 — cualificación de la fuente (regla del PI, mismo día):** «esto sí
+se puede afirmar si se remite a una evidencia trazable respaldada por un
+centro de evidencia científica, un paper validado por pares y que a la fecha
+no haya sido refutado, o guías de práctica clínica por asociación científica
+acreditada». `core/rag/provenance.py`: cualifica por contrato de metadatos
+(`tier` · `accredited` · `retraction_status` · `retraction_checked_at`) los
+fragmentos que sostienen la respuesta. Retractada ⇒ retenida; nivel no
+cualificado ⇒ claims retirados; desconocida ⇒ entregada y declarada NO
+afirmable (strict: retenida). «A la fecha» = comprobación fechada y vigente
+(180 días). Salida nueva aditiva: `affirmable`. Lo que esta capa NO hace:
+consultar registros externos (es curación del corpus, que deja su fecha en
+los metadatos) ni la jerarquía clínica GRADE/PICO (canon: solución, no motor).
+Pruebas: `tests/test_procedencia_fuente.py` (16; cada condición de la regla
+con permitido y bloqueado). Suite: 171 pass / 3 skip.
+
+**Deuda abierta por esta capa:** hoy NINGÚN corpus del Foundation lleva
+metadatos de procedencia — los 1.095 abstracts del piloto PubMed son
+peer-reviewed por construcción pero no están etiquetados ni comprobados
+contra retractaciones. Hasta que la ingesta (`core/ingestion.py`,
+`scripts/ingest_pubmed_delta.py`) escriba `source_meta`, toda respuesta sale
+`affirmable=false` y lo dice. Es el estado honesto, no un fallo.
+
 **Pendiente para cerrar el expediente del verificador con modelo real:**
 (1) re-ejecutar `tests/test_e2e_sovereign.py` en el Spark con ALIA como
 juez — el E2E del 15-oct es ANTERIOR a las capas 3-4 y su acta no las cubre;

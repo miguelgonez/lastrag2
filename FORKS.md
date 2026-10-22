@@ -21,8 +21,11 @@ inventar»*. Tres capas por **código**, heredadas del master por defecto:
 (1) sin evidencia el LLM no se invoca; (2) una salida «desde conocimiento
 general» no se entrega; (3) anclaje claim↔evidencia congelada — lo no anclado
 no se entrega; (4) verificación claim↔evidencia de toda frase asertiva —
-lo no respaldado se retira con marca, una contradicción retiene la respuesta.
-Desactivarlas (`grounding="off"`, `verification="off"`,
+lo no respaldado se retira con marca, una contradicción retiene la respuesta;
+(5) cualificación de la fuente — solo es afirmable lo que remite a paper
+revisado por pares no refutado a fecha, GPC de asociación acreditada o
+centro de evidencia; el resto se entrega declarado no afirmable o se retiene.
+Desactivarlas (`grounding="off"`, `verification="off"`, `source_policy="off"`,
 `allow_general_knowledge=True`) es explícito, viaja en cada respuesta
 (`features.generation_policy`) y exige justificación en el expediente del
 fork. Doctrina y estado por producto:

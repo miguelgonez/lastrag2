@@ -44,6 +44,7 @@ from .failure_graph import classify_absence, FailureGraph
 from .multimodal import boost_multimodal
 from .grounding import freeze_evidence, strip_fabricated_quotes, verify_grounding
 from .verifier import ClaimVerifier, redact as redact_unsupported
+from .provenance import NOT_AFFIRMABLE_FOOTER, assess as assess_provenance
 
 
 # ============================================================
@@ -62,6 +63,12 @@ from .verifier import ClaimVerifier, redact as redact_unsupported
 #   4. VERIFICACION claim<->evidencia (verifier.py): cada frase asertiva, con
 #      o sin cifras, debe tener respaldo en un fragmento congelado. Lo no
 #      respaldado se RETIRA con marca; una contradiccion RETIENE la respuesta.
+#   5. CUALIFICACION DE LA FUENTE (provenance.py): respaldado no es afirmable.
+#      Solo afirma lo que remite a paper revisado por pares no refutado a
+#      fecha, GPC de asociacion acreditada o centro de evidencia. Fuente
+#      retractada => respuesta retenida; nivel no cualificado => claim
+#      retirado; procedencia desconocida => se entrega declarado NO afirmable
+#      (strict: tambien retenida). `affirmable` viaja en cada respuesta.
 # El comportamiento anterior (responder desde conocimiento general con aviso
 # declarado) queda como opt-in explicito: allow_general_knowledge=True.
 
@@ -77,6 +84,14 @@ UNVERIFIED_RESPONSE = (
     "evidencia, pero la respuesta generada contradice o no está respaldada por "
     "los fragmentos recuperados. No se entrega una afirmación que la evidencia "
     "no sostenga: consulta los fragmentos citados o acota la pregunta."
+)
+
+UNQUALIFIED_RESPONSE = (
+    "⛔ **Respuesta retenida (procedencia).** La evidencia recuperada que sostiene "
+    "esta respuesta procede de una fuente retractada o refutada, o no cualifica "
+    "como fuente de grado médico (paper revisado por pares no refutado a fecha, "
+    "guía de práctica clínica de asociación acreditada o centro de evidencia). "
+    "No se afirma lo que no remite a una fuente cualificada."
 )
 
 UNGROUNDED_RESPONSE = (
@@ -178,6 +193,18 @@ class LastRAGEngine:
         # True => el LLM del motor actua tambien como juez de implicacion
         # (MCQ A/B/C, fail-closed). Cuesta una llamada por claim y fragmento.
         verification_judge: bool = False,
+        # Capa 5: cualificacion de la fuente (regla del PI 22-oct).
+        #   source_meta: {locator|block_id|document: {tier, publisher,
+        #     accredited, retraction_status, retraction_checked_at, ...}}
+        #   "block"  (default): retractada => retenida; nivel no cualificado
+        #            => claim retirado; desconocida => entregado y declarado
+        #            NO afirmable (confianza capada).
+        #   "strict": ademas, procedencia desconocida => retenida.
+        #   "declare": se entrega integro con la cualificacion declarada.
+        #   "off": solo para forks con su propio control de procedencia.
+        source_meta: Optional[dict] = None,
+        source_policy: str = "block",
+        max_check_age_days: int = 180,
     ):
         self.backend = backend
         self.lastindex = lastindex
@@ -203,6 +230,11 @@ class LastRAGEngine:
         self.claim_verifier = claim_verifier or ClaimVerifier()
         if verification_judge and self.claim_verifier.judge is None:
             self.claim_verifier.judge = self.llm
+        if source_policy not in ("block", "strict", "declare", "off"):
+            raise ValueError(f"source_policy desconocido: {source_policy}")
+        self.source_meta = source_meta
+        self.source_policy = source_policy
+        self.max_check_age_days = max_check_age_days
         self._causal_gate = CausalGate()
         self._conflict_engine = ConflictEngine()
         self.app = self._build()
@@ -664,6 +696,15 @@ Responde con una sola letra: A o B. Nada más.
             if verification_update is not None:
                 return verification_update
 
+        # Capa 5: respaldado no es afirmable. Solo afirma lo cualificado.
+        if self.source_policy != "off" and chunks:
+            text, prov_update, prov_cap, prov_degr = self._enforce_provenance(
+                state, text, chunks, feats)
+            if prov_update is not None:
+                return prov_update
+            confidence_cap = min(confidence_cap, prov_cap)
+            extra_degradations = [*extra_degradations, *prov_degr]
+
         confidence, is_general = self._score(text, chunks, external)
         confidence = min(confidence, confidence_cap)
         print(f"🧠 [generate] conf={confidence:.0%} general={is_general}")
@@ -806,6 +847,106 @@ Responde con una sola letra: A o B. Nada más.
                  "redacted": n, "supported_ratio": round(report.supported_ratio, 3)}
         return redacted, None, report.supported_ratio, [entry]
 
+    def _enforce_provenance(self, state: RAGState, text: str,
+                            chunks: list[EvidenceChunk], feats: dict
+                            ) -> tuple[str, Optional[dict], float, list[dict]]:
+        """Capa 5: cualifica la fuente de cada fragmento que sostiene la
+        respuesta. Devuelve (texto, update_o_None, tope_confianza,
+        degradaciones). Si el update no es None, ES la respuesta final."""
+        # El rechazo de dominio no afirma nada: no hay procedencia que cualificar.
+        if "soy un asistente médico clínico" in text.lower():
+            feats["provenance"] = {"policy": self.source_policy,
+                                   "state": "domain_refusal", "affirmable": False}
+            return text, None, 1.0, []
+        # Se cualifica la evidencia que SOSTIENE la respuesta: si la capa 4
+        # dejo el mapa claim->span, solo los fragmentos citados por un claim
+        # respaldado; sin ese mapa, todos los recuperados (conservador).
+        claims_map = (feats.get("verification") or {}).get("claims") or []
+        supporting = {c["span"]["locator"] for c in claims_map
+                      if c.get("verdict") == "SUPPORTED" and c.get("span")}
+        scope = [c for c in chunks if c.locator in supporting] if supporting else chunks
+        assessment = assess_provenance(scope, self.source_meta,
+                                       max_check_age_days=self.max_check_age_days,
+                                       policy=self.source_policy)
+        feats.setdefault("provenance_scope", "supporting_claims" if supporting else "all_retrieved")
+        feats["provenance"] = assessment.to_dict()
+        if assessment.affirmable:
+            return text, None, 1.0, []
+
+        if self.source_policy == "declare":
+            entry = {"component": "provenance", "reason": "SOURCE_NOT_QUALIFIED_DECLARED",
+                     "effect": "answer_served_not_affirmable",
+                     "blocking": len(assessment.blocking),
+                     "unqualified_known": len(assessment.unqualified_known),
+                     "unknown": len(assessment.unknown)}
+            return text, None, 0.5, [entry]
+
+        # Retractada/refutada o (strict) desconocida: contamina la respuesta.
+        retain_reason = None
+        if assessment.blocking:
+            retain_reason, kind = "SOURCE_RETRACTED_BLOCKED", "source_retracted_blocked"
+        elif self.source_policy == "strict" and not assessment.qualified:
+            retain_reason, kind = "SOURCE_UNQUALIFIED_BLOCKED", "source_unqualified_blocked"
+        elif self.source_policy == "strict" and (assessment.unknown or assessment.unqualified_known):
+            retain_reason, kind = "SOURCE_UNQUALIFIED_BLOCKED", "source_unqualified_blocked"
+        if retain_reason:
+            print(f"⛔ [provenance] respuesta RETENIDA: {retain_reason} "
+                  f"(blocking={len(assessment.blocking)}, unknown={len(assessment.unknown)})")
+            if self.failure_graph:
+                self.failure_graph.record(
+                    "UNSUPPORTED_GENERATION",
+                    detail=f"procedencia: {retain_reason}")
+            feats["abstention"] = {"kind": kind,
+                                   "blocked_preview": text.strip()[:120]}
+            entry = {"component": "provenance", "reason": retain_reason,
+                     "effect": "response_replaced_by_abstention",
+                     "blocking": len(assessment.blocking),
+                     "unqualified_known": len(assessment.unqualified_known),
+                     "unknown": len(assessment.unknown)}
+            return text, {"response": UNQUALIFIED_RESPONSE, "confidence": 0.0,
+                          "is_general_knowledge": False, "features": feats,
+                          "degradations": self._decl(state, entry)}, 0.0, []
+
+        # Nivel conocido y NO cualificado (preprint, interno, web): se retiran
+        # las frases que solo se sostienen en esas fuentes, si la capa 4 dejo
+        # el mapa claim->span. Sin ese mapa, se declara en bloque.
+        degr: list[dict] = []
+        unq = set(assessment.unqualified_known)
+        claims = (feats.get("verification") or {}).get("claims") or []
+        if unq and claims:
+            retirar = [c["sentence"] for c in claims
+                       if c.get("verdict") == "SUPPORTED" and c.get("span")
+                       and c["span"].get("locator") in unq]
+            n = 0
+            for sentence in retirar:
+                # sentence[:200] en el informe; la frase integra esta en el texto
+                for frase in self._sentences_starting_with(text, sentence):
+                    if frase in text:
+                        text = text.replace(
+                            frase, "「afirmación retirada: fuente no cualificada」", 1)
+                        n += 1
+            if n:
+                text += (f"\n\n⚠️ **Procedencia**: {n} afirmación(es) retirada(s) por "
+                         "sostenerse solo en fuentes no cualificadas (preprint, "
+                         "documento interno, web).")
+                degr.append({"component": "provenance",
+                             "reason": "UNQUALIFIED_SOURCE_CLAIMS_REDACTED",
+                             "effect": "claims_removed_with_visible_mark", "redacted": n})
+
+        # Procedencia desconocida (o no cualificada sin mapa de claims): se
+        # entrega, pero declarado NO afirmable.
+        text += NOT_AFFIRMABLE_FOOTER
+        degr.append({"component": "provenance", "reason": "SOURCE_NOT_QUALIFIED",
+                     "effect": "answer_served_not_affirmable",
+                     "unqualified_known": len(assessment.unqualified_known),
+                     "unknown": len(assessment.unknown)})
+        return text, None, 0.5, degr
+
+    @staticmethod
+    def _sentences_starting_with(text: str, prefix: str) -> list[str]:
+        from .grounding import split_sentences
+        return [s for s in split_sentences(text) if s.startswith(prefix[:120])]
+
     @staticmethod
     def _admits_general(text: str) -> bool:
         """True si la salida se declara basada en conocimiento general (el
@@ -890,6 +1031,10 @@ Responde con una sola letra: A o B. Nada más.
             # Grado medico: toda abstencion (sin evidencia, bloqueo de
             # conocimiento general o gate causal) es distinguible aqui.
             "abstained": bool(features.get("abstention")),
+            # Capa 5: respaldado no es afirmable. True solo si TODA la fuente
+            # que sostiene la respuesta cualifica (regla del PI 22-oct).
+            "affirmable": (bool(chunks) and not features.get("abstention")
+                           and bool((features.get("provenance") or {}).get("affirmable"))),
             "route": final["route"],
             "route_effective": final.get("route_effective") or final["route"],
             "degradations": final.get("degradations", []),

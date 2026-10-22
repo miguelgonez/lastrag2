@@ -141,11 +141,29 @@ CausalGate), en dos capas:
    `declare`, `off`; `verification_judge=True` activa el juez con el LLM del
    motor.
 
+5. **Cualificación de la fuente** (`core/rag/provenance.py`): *respaldado*
+   no es *afirmable*. Regla del PI (22-oct-2026): solo se afirma lo que remite
+   a un **paper revisado por pares no refutado a fecha**, una **guía de
+   práctica clínica de asociación científica acreditada** o un **centro de
+   evidencia**. Se evalúa por contrato de metadatos (`source_meta` por
+   documento o locator: `tier`, `accredited`, `retraction_status`,
+   `retraction_checked_at`) sobre los fragmentos que **sostienen** la
+   respuesta (mapa claim→span de la capa 4). Fuente retractada o con
+   expresión de preocupación ⇒ respuesta **retenida**; nivel no cualificado
+   (preprint, interno, web) ⇒ las frases que solo se sostienen en él se
+   **retiran**; procedencia desconocida ⇒ se entrega **declarada no
+   afirmable** con confianza capada (`strict`: también retenida). «A la fecha»
+   exige comprobación fechada y vigente (180 días por defecto): sin fecha o
+   caducada no se afirma. Modos `block` (default), `strict`, `declare`, `off`.
+
 Toda respuesta declara su política en `features.generation_policy`, su estado
 de anclaje en `features.grounding`, el veredicto por claim en
-`features.verification` y toda abstención (sin evidencia, bloqueo, no anclada,
-no respaldada, contradicha o gate causal) es distinguible en el campo
-`abstained`.
+`features.verification`, la cualificación de sus fuentes en
+`features.provenance`, y expone dos campos de nivel superior: `abstained`
+(toda retención, cualquiera que sea la capa) y **`affirmable`** — `True` solo
+cuando toda la evidencia que sostiene la respuesta cualifica como fuente de
+grado médico. `UNKNOWN != PASS`: sin metadatos de procedencia, `affirmable`
+es `False` y la respuesta lo dice.
 
 **Medición del verificador** (`core.rag.verifier.run_verifier_benchmark`,
 14 casos sintéticos con ground truth): la métrica de grado médico es
@@ -158,18 +176,22 @@ comportamiento anterior (aviso «⚠️ conocimiento médico general» con confi
 capada) queda como **opt-in explícito** para despliegues no clínicos:
 `LastRAGEngine(..., allow_general_knowledge=True)`.
 
-**Límite declarado (sin esto, el claim sería falso):** el verificador
-comprueba que cada afirmación esté **respaldada por la evidencia recuperada**;
-no comprueba que la evidencia sea verdadera (si el corpus está equivocado, un
-claim respaldado sigue estando equivocado) ni sustituye la revisión humana.
+**Límite declarado (sin esto, el claim sería falso):** las capas 1-4
+comprueban que cada afirmación esté **respaldada por la evidencia recuperada**;
+la capa 5 comprueba que esa evidencia **cualifique como fuente** por sus
+metadatos de procedencia. El motor no juzga la verdad clínica: delega en la
+procedencia, que sí es verificable por contrato. Los metadatos los pone la
+curación del corpus (comprobar retractaciones en Retraction Watch/PubMed es
+un proceso de ingesta que deja su fecha en `retraction_checked_at`); el motor
+los lee y los exige. Nada de esto sustituye la revisión humana.
 Sin embedder ni juez, la paráfrasis fuerte se **retira** (falso bloqueo
 declarado), nunca se entrega sin verificar. La afirmación «0 alucinaciones»
 que hoy sostiene el código es: *ninguna frase llega al usuario sin respaldo
 verificado en la evidencia congelada, y toda retirada queda declarada*. Lo que
 sigue pendiente de medir con corpus y modelo reales es la tasa de falsos
 bloqueos en producción. Pruebas (caso permitido + casos bloqueados):
-`tests/test_abstencion_grado_medico.py`, `tests/test_anclaje_claim_evidencia.py`
-y `tests/test_verificador_claims.py`.
+`tests/test_abstencion_grado_medico.py`, `tests/test_anclaje_claim_evidencia.py`,
+`tests/test_verificador_claims.py` y `tests/test_procedencia_fuente.py`.
 
 Doctrina NextHealth aplicable a **todo producto** (no solo a este motor):
 `NH-GRADO-MEDICO-001`, en el marco ADLC — ver `FORKS.md` para la ruta.
