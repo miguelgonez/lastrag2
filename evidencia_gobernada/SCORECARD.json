@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-23T21:29:32",
+  "at": "2026-10-24T00:32:01",
   "rc": 75,
   "results": {
     "G0": {
@@ -9,13 +9,13 @@
       "metrics": {
         "passed": 179,
         "failed": 0,
-        "floor": 173,
-        "summary": "179 passed, 3 skipped in 22.54s"
+        "floor": 179,
+        "summary": "179 passed, 3 skipped in 28.33s"
       }
     },
     "G1": {
       "name": "fugas_cero",
-      "status": "UNKNOWN",
+      "status": "PASS",
       "needs_pi": false,
       "metrics": {
         "lexical": {
@@ -24,15 +24,39 @@
           "exact": 12,
           "n": 14
         },
-        "reason": "sin recibo de juez real (Spark/ALIA)"
+        "judge": {
+          "fugas": 0,
+          "falsos_bloqueos": 2,
+          "methods": {
+            "semantic": "applied",
+            "judge": "applied"
+          },
+          "measured_at": "2026-10-23T22:24:15+00:00"
+        }
       }
     },
     "G2": {
       "name": "curacion_ejecutada",
-      "status": "UNKNOWN",
+      "status": "PASS",
       "needs_pi": false,
       "metrics": {
-        "reason": "sin recibo G2_curacion.json"
+        "measured_at": "2026-10-23T23:17:26",
+        "by": "zcode@MBP",
+        "metrics": {
+          "corpus_docs": 48399,
+          "checked_docs": 48399,
+          "unknown": 0,
+          "retracted": 84,
+          "concern": 0,
+          "max_check_age_days": 0,
+          "sources": [
+            "pubmed",
+            "rwdb"
+          ],
+          "source_meta_path": "/Users/yeye/Documents/Agentes y conocimiento/Desarrollo Tecnologico y Scripts/Entorno_Desarrollo/py/Py_LastRAG_Index/cierre_brecha_real/data/curation/source_meta_20261023.json",
+          "sweep_run_date": "2026-10-23"
+        },
+        "coverage": 1.0
       }
     },
     "G3": {

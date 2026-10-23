@@ -1,0 +1,179 @@
+{
+ "gate": "G1",
+ "measured_at": "2026-10-23T22:24:15+00:00",
+ "by": "zcode@spark-3de7",
+ "inputs_sha256": {
+  "verifier": "754ca2f1b0450dab82c663f3597d97ddf1522c864cf2cafd5f7ea2382f3752e8",
+  "producer": "4a70c04b42629d0ad0e34ba3943c2c99de279a4456cf8b62d7b1d9bda182694f",
+  "embedder_model_id": "paraphrase-multilingual-minilm-onnx-v1",
+  "llm_endpoint": "http://127.0.0.1:8024/v1",
+  "llm_model": "alia-nexthealth",
+  "llm_max_model_len": 4096
+ },
+ "metrics": {
+  "fugas": 0,
+  "falsos_bloqueos": 2,
+  "n": 14,
+  "exact": 10,
+  "methods": {
+   "semantic": "applied",
+   "judge": "applied"
+  }
+ },
+ "raw_cases": [
+  {
+   "case": "literal_1",
+   "kind": "supported_literal",
+   "expected": "SUPPORTED",
+   "actual": "SUPPORTED",
+   "pass": true,
+   "leak": false,
+   "false_block": false,
+   "method": "lexical",
+   "lexical": 1.0
+  },
+  {
+   "case": "literal_2",
+   "kind": "supported_literal",
+   "expected": "SUPPORTED",
+   "actual": "SUPPORTED",
+   "pass": true,
+   "leak": false,
+   "false_block": false,
+   "method": "judge",
+   "lexical": 1.0
+  },
+  {
+   "case": "parafrasis_leve_1",
+   "kind": "supported_paraphrase",
+   "expected": "SUPPORTED",
+   "actual": "SUPPORTED",
+   "pass": true,
+   "leak": false,
+   "false_block": false,
+   "method": "lexical",
+   "lexical": 0.889
+  },
+  {
+   "case": "parafrasis_leve_2",
+   "kind": "supported_paraphrase",
+   "expected": "SUPPORTED",
+   "actual": "SUPPORTED",
+   "pass": true,
+   "leak": false,
+   "false_block": false,
+   "method": "lexical",
+   "lexical": 0.714
+  },
+  {
+   "case": "parafrasis_fuerte_1",
+   "kind": "supported_paraphrase",
+   "expected": "SUPPORTED",
+   "actual": "UNSUPPORTED",
+   "pass": false,
+   "leak": false,
+   "false_block": true,
+   "method": "lexical",
+   "lexical": 0.125
+  },
+  {
+   "case": "parafrasis_fuerte_2",
+   "kind": "supported_paraphrase",
+   "expected": "SUPPORTED",
+   "actual": "CONTRADICTED",
+   "pass": false,
+   "leak": false,
+   "false_block": true,
+   "method": "judge",
+   "lexical": 0.0
+  },
+  {
+   "case": "inventado_1",
+   "kind": "unsupported",
+   "expected": "UNSUPPORTED",
+   "actual": "UNSUPPORTED",
+   "pass": true,
+   "leak": false,
+   "false_block": false,
+   "method": "lexical",
+   "lexical": 0.286
+  },
+  {
+   "case": "inventado_2",
+   "kind": "unsupported",
+   "expected": "UNSUPPORTED",
+   "actual": "UNSUPPORTED",
+   "pass": true,
+   "leak": false,
+   "false_block": false,
+   "method": "lexical",
+   "lexical": 0.0
+  },
+  {
+   "case": "inventado_3",
+   "kind": "unsupported",
+   "expected": "UNSUPPORTED",
+   "actual": "CONTRADICTED",
+   "pass": false,
+   "leak": false,
+   "false_block": false,
+   "method": "judge",
+   "lexical": 0.143
+  },
+  {
+   "case": "contradice_1",
+   "kind": "contradicted",
+   "expected": "CONTRADICTED",
+   "actual": "CONTRADICTED",
+   "pass": true,
+   "leak": false,
+   "false_block": false,
+   "method": "judge",
+   "lexical": 0.8
+  },
+  {
+   "case": "contradice_2",
+   "kind": "contradicted",
+   "expected": "CONTRADICTED",
+   "actual": "CONTRADICTED",
+   "pass": true,
+   "leak": false,
+   "false_block": false,
+   "method": "judge",
+   "lexical": 0.833
+  },
+  {
+   "case": "polaridad_1",
+   "kind": "polarity",
+   "expected": "UNSUPPORTED",
+   "actual": "CONTRADICTED",
+   "pass": false,
+   "leak": false,
+   "false_block": false,
+   "method": "judge",
+   "lexical": 1.0
+  },
+  {
+   "case": "meta_1",
+   "kind": "meta",
+   "expected": "META",
+   "actual": "META",
+   "pass": true,
+   "leak": false,
+   "false_block": false,
+   "method": "meta",
+   "lexical": 0.0
+  },
+  {
+   "case": "meta_2",
+   "kind": "meta",
+   "expected": "META",
+   "actual": "META",
+   "pass": true,
+   "leak": false,
+   "false_block": false,
+   "method": "meta",
+   "lexical": 0.0
+  }
+ ]
+}
