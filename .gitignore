@@ -25,3 +25,10 @@ node_modules/
 cierre_brecha_real/data/pubmed_scale.jsonl
 cierre_brecha_real/data/scale_state.json
 cierre_brecha_real/data/scale_embeddings_*.npz
+# Licencia NLM: el corpus (abstracts) y sus derivados directos NO se redistribuyen
+cierre_brecha_real/data/pubmed_pilot.jsonl
+cierre_brecha_real/data/pubmed_pilot.parquet
+cierre_brecha_real/data/embeddings_*.npy
+cierre_brecha_real/data/curation/source_meta_*.json
+cierre_brecha_real/data/curation/retraction_watch.csv
+cierre_brecha_real/data/curation/pubmed_partial.json
