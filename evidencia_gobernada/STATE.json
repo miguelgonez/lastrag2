@@ -1,0 +1,48 @@
+{
+  "passes": 0,
+  "history": [
+    {
+      "at": "2026-10-23T21:27:42",
+      "rc": 75,
+      "gates": {
+        "G0": "PASS",
+        "G1": "UNKNOWN",
+        "G2": "UNKNOWN",
+        "G3": "UNKNOWN",
+        "G4": "UNKNOWN",
+        "G5": "UNKNOWN",
+        "G6": "UNKNOWN",
+        "G7": "UNKNOWN",
+        "G8": "UNKNOWN",
+        "G9": "UNKNOWN",
+        "G10": "UNKNOWN",
+        "G11": "UNKNOWN",
+        "G12": "UNKNOWN"
+      }
+    },
+    {
+      "at": "2026-10-23T21:29:32",
+      "rc": 75,
+      "gates": {
+        "G0": "PASS",
+        "G1": "UNKNOWN",
+        "G2": "UNKNOWN",
+        "G3": "UNKNOWN",
+        "G4": "UNKNOWN",
+        "G5": "UNKNOWN",
+        "G6": "UNKNOWN",
+        "G7": "UNKNOWN",
+        "G8": "UNKNOWN",
+        "G9": "UNKNOWN",
+        "G10": "UNKNOWN",
+        "G11": "UNKNOWN",
+        "G12": "UNKNOWN"
+      }
+    }
+  ],
+  "best": {
+    "G0": "PASS"
+  },
+  "plan_sha256": "b53e7822715be41ca342a61d6bdca487192d5ebc637e2e5edb975430eb804afa",
+  "tests_floor": 179
+}

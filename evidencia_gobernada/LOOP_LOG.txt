@@ -1,0 +1,23 @@
+=== Loop evidencia gobernada · 2026-10-23T21:29:06 ===
+✅ G0   integridad_suite       PASS     
+⬜ G1   fugas_cero             UNKNOWN  sin recibo de juez real (Spark/ALIA)
+⬜ G2   curacion_ejecutada     UNKNOWN  sin recibo G2_curacion.json
+⬜ G3   afirmabilidad          UNKNOWN  sin recibo G3_afirmabilidad.json
+⬜ G4   falsos_bloqueos        UNKNOWN  sin recibo G4_falsos_bloqueos.json
+⬜ G5   cobertura_corpus       UNKNOWN  sin recibo G5_cobertura.json
+⬜ G6   recuperacion           UNKNOWN  sin recibo G6_recuperacion.json
+⬜ G7   jerarquia_evidencia    UNKNOWN  sin recibo G7_jerarquia.json
+⬜ G8   actualidad             UNKNOWN  sin recibo G8_actualidad.json
+⬜ G9   latencia               UNKNOWN  sin recibo G9_latencia.json
+⬜ G10  validacion_clinica     UNKNOWN  sin recibo G10_validacion_clinica.json
+⬜ G11  regulatorio            UNKNOWN  sin recibo G11_regulatorio.json
+⬜ G12  auditoria_externa      UNKNOWN  sin recibo G12_auditoria_externa.json
+
+=== 1/13 PASS · 0 FAIL · 12 UNKNOWN ===
+
+>>> SIGUIENTE ACCION (una sola; el loop re-mide al terminar) <<<
+puerta   : G1 · fugas_cero
+producir : run_verifier_benchmark con juez REAL (Spark/ALIA) y embedder real: metrics {fugas, falsos_bloqueos, n, exact, methods}
+recibo   : evidencia_gobernada/receipts/G1_juez_real.json  (schema: {gate, measured_at, by, inputs_sha256, metrics{...}}; sin campo pass)
+umbrales : {"fugas_max": 0}
+prohibido: mocks, bajar umbrales, escribir 'pass' a mano, tocar recibos de puertas anteriores, tocar PLAN_GATES.json

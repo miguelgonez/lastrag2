@@ -1,0 +1,119 @@
+{
+  "at": "2026-10-23T21:29:32",
+  "rc": 75,
+  "results": {
+    "G0": {
+      "name": "integridad_suite",
+      "status": "PASS",
+      "needs_pi": false,
+      "metrics": {
+        "passed": 179,
+        "failed": 0,
+        "floor": 173,
+        "summary": "179 passed, 3 skipped in 22.54s"
+      }
+    },
+    "G1": {
+      "name": "fugas_cero",
+      "status": "UNKNOWN",
+      "needs_pi": false,
+      "metrics": {
+        "lexical": {
+          "fugas": 0,
+          "falsos_bloqueos": 2,
+          "exact": 12,
+          "n": 14
+        },
+        "reason": "sin recibo de juez real (Spark/ALIA)"
+      }
+    },
+    "G2": {
+      "name": "curacion_ejecutada",
+      "status": "UNKNOWN",
+      "needs_pi": false,
+      "metrics": {
+        "reason": "sin recibo G2_curacion.json"
+      }
+    },
+    "G3": {
+      "name": "afirmabilidad",
+      "status": "UNKNOWN",
+      "needs_pi": false,
+      "metrics": {
+        "reason": "sin recibo G3_afirmabilidad.json"
+      }
+    },
+    "G4": {
+      "name": "falsos_bloqueos",
+      "status": "UNKNOWN",
+      "needs_pi": false,
+      "metrics": {
+        "reason": "sin recibo G4_falsos_bloqueos.json"
+      }
+    },
+    "G5": {
+      "name": "cobertura_corpus",
+      "status": "UNKNOWN",
+      "needs_pi": true,
+      "metrics": {
+        "reason": "sin recibo G5_cobertura.json"
+      }
+    },
+    "G6": {
+      "name": "recuperacion",
+      "status": "UNKNOWN",
+      "needs_pi": false,
+      "metrics": {
+        "reason": "sin recibo G6_recuperacion.json"
+      }
+    },
+    "G7": {
+      "name": "jerarquia_evidencia",
+      "status": "UNKNOWN",
+      "needs_pi": false,
+      "metrics": {
+        "reason": "sin recibo G7_jerarquia.json"
+      }
+    },
+    "G8": {
+      "name": "actualidad",
+      "status": "UNKNOWN",
+      "needs_pi": false,
+      "metrics": {
+        "reason": "sin recibo G8_actualidad.json"
+      }
+    },
+    "G9": {
+      "name": "latencia",
+      "status": "UNKNOWN",
+      "needs_pi": false,
+      "metrics": {
+        "reason": "sin recibo G9_latencia.json"
+      }
+    },
+    "G10": {
+      "name": "validacion_clinica",
+      "status": "UNKNOWN",
+      "needs_pi": true,
+      "metrics": {
+        "reason": "sin recibo G10_validacion_clinica.json"
+      }
+    },
+    "G11": {
+      "name": "regulatorio",
+      "status": "UNKNOWN",
+      "needs_pi": true,
+      "metrics": {
+        "reason": "sin recibo G11_regulatorio.json"
+      }
+    },
+    "G12": {
+      "name": "auditoria_externa",
+      "status": "UNKNOWN",
+      "needs_pi": true,
+      "metrics": {
+        "reason": "sin recibo G12_auditoria_externa.json"
+      }
+    }
+  }
+}
