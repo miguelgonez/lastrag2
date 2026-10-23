@@ -69,6 +69,7 @@ class SourceProvenance:
     accredited: Optional[bool] = None        # GPC: ¿asociación acreditada?
     retraction_status: str = RETRACTION_UNKNOWN
     retraction_checked_at: Optional[str] = None   # ISO date de la comprobación
+    retraction_source: Optional[str] = None  # pubmed | rwdb | pubmed+rwdb (quién comprobó)
     identifier: Optional[str] = None         # DOI / PMID / URL oficial
     note: Optional[str] = None
 
@@ -81,6 +82,7 @@ class SourceProvenance:
             accredited=meta.get("accredited"),
             retraction_status=str(meta.get("retraction_status") or RETRACTION_UNKNOWN),
             retraction_checked_at=meta.get("retraction_checked_at"),
+            retraction_source=meta.get("retraction_source"),
             identifier=meta.get("identifier") or meta.get("doi") or meta.get("pmid"),
             note=meta.get("note"),
         )
@@ -95,11 +97,13 @@ class Qualification:
     retraction_status: str = RETRACTION_UNKNOWN
     checked_at: Optional[str] = None
     check_age_days: Optional[int] = None
+    source: Optional[str] = None     # quién hizo la comprobación (trazabilidad)
 
     def to_dict(self) -> dict:
         return {"qualified": self.qualified, "tier": self.tier, "reason": self.reason,
                 "blocking": self.blocking, "retraction_status": self.retraction_status,
-                "checked_at": self.checked_at, "check_age_days": self.check_age_days}
+                "checked_at": self.checked_at, "check_age_days": self.check_age_days,
+                "source": self.source}
 
 
 def _parse_date(value: Optional[str]) -> Optional[date]:
@@ -149,18 +153,27 @@ def qualify(prov: SourceProvenance, *, today: Optional[date] = None,
     if checked is None:
         return Qualification(False, tier, "RETRACTION_CHECK_UNDATED: comprobación sin fecha",
                              retraction_status=RETRACTION_NONE)
+    # Condición del arquitecto (23-oct): cada comprobación registra FUENTE y
+    # FECHA por documento. Una fecha sin fuente no es trazable.
+    if not (prov.retraction_source or "").strip():
+        return Qualification(False, tier, "RETRACTION_CHECK_UNSOURCED: comprobación sin fuente",
+                             retraction_status=RETRACTION_NONE,
+                             checked_at=prov.retraction_checked_at)
     age = (today - checked).days
     if age < 0:
         return Qualification(False, tier, "RETRACTION_CHECK_IN_FUTURE: fecha inválida",
                              retraction_status=RETRACTION_NONE,
-                             checked_at=prov.retraction_checked_at, check_age_days=age)
+                             checked_at=prov.retraction_checked_at, check_age_days=age,
+                             source=prov.retraction_source)
     if age > max_check_age_days:
         return Qualification(False, tier,
                              f"RETRACTION_CHECK_STALE: {age} días > {max_check_age_days}",
                              retraction_status=RETRACTION_NONE,
-                             checked_at=prov.retraction_checked_at, check_age_days=age)
+                             checked_at=prov.retraction_checked_at, check_age_days=age,
+                             source=prov.retraction_source)
     return Qualification(True, tier, f"QUALIFIED:{tier}", retraction_status=RETRACTION_NONE,
-                         checked_at=prov.retraction_checked_at, check_age_days=age)
+                         checked_at=prov.retraction_checked_at, check_age_days=age,
+                         source=prov.retraction_source)
 
 
 # ── Resolución por fragmento ─────────────────────────────────────────────

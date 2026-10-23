@@ -39,6 +39,9 @@ CADUCADA = (HOY - timedelta(days=400)).isoformat()
 
 
 def _q(**meta):
+    # Las comprobaciones de las pruebas llevan fuente salvo que el caso la omita.
+    if meta.get("retraction_checked_at") and "retraction_source" not in meta:
+        meta["retraction_source"] = "pubmed"
     return qualify(SourceProvenance.from_dict(meta), today=HOY)
 
 
@@ -91,6 +94,17 @@ def test_bloqueado_a_la_fecha_exige_comprobacion_con_fecha_y_vigente():
               retraction_checked_at="2099-01-01").reason.startswith("RETRACTION_CHECK_IN_FUTURE")
 
 
+def test_bloqueado_comprobacion_sin_fuente_no_es_trazable():
+    """Condición del arquitecto (23-oct): fuente Y fecha por documento."""
+    q = _q(tier=PEER_REVIEWED, retraction_status="none", retraction_checked_at=RECIENTE,
+           retraction_source="")
+    assert not q.qualified and q.reason.startswith("RETRACTION_CHECK_UNSOURCED")
+    ok = _q(tier=PEER_REVIEWED, retraction_status="none", retraction_checked_at=RECIENTE,
+            retraction_source="pubmed+rwdb")
+    assert ok.qualified and ok.source == "pubmed+rwdb"
+    assert ok.to_dict()["source"] == "pubmed+rwdb", "la fuente viaja en el informe"
+
+
 def test_procedencia_desconocida_no_es_pass():
     q = _q()
     assert not q.qualified and q.tier == "unknown" and q.reason.startswith("UNKNOWN_TIER")
@@ -106,9 +120,10 @@ def test_assess_resuelve_por_locator_block_id_o_documento():
         EvidenceChunk(text="c", locator="blk_3"),
     ]
     meta = {"Guía ESC 2024": {"tier": CLINICAL_GUIDELINE, "accredited": True,
-                              "retraction_status": "none", "retraction_checked_at": RECIENTE},
+                              "retraction_status": "none", "retraction_checked_at": RECIENTE,
+                              "retraction_source": "pubmed"},
             "blk_2": {"tier": PREPRINT, "retraction_status": "none",
-                      "retraction_checked_at": RECIENTE}}
+                      "retraction_checked_at": RECIENTE, "retraction_source": "pubmed"}}
     a = assess(chunks, meta, today=HOY)
     assert a.qualified == ["blk_1"] and a.unqualified_known == ["blk_2"] and a.unknown == ["blk_3"]
     assert not a.affirmable
@@ -153,7 +168,8 @@ def _run(source_meta=None, salida=RESPUESTA, corpus=None, **kwargs):
 
 META_GPC = {"Guía DM2": {"tier": CLINICAL_GUIDELINE, "accredited": True,
                          "publisher": "SED", "retraction_status": "none",
-                         "retraction_checked_at": RECIENTE}}
+                         "retraction_checked_at": RECIENTE,
+                         "retraction_source": "pubmed+rwdb"}}
 
 
 def test_motor_permitido_fuente_cualificada_es_afirmable():
@@ -188,7 +204,7 @@ def test_motor_retira_la_frase_que_solo_sostiene_un_preprint():
     corpus = _corpus(docs=("Guía DM2", "Preprint 2026"))
     meta = {**META_GPC,
             "Preprint 2026": {"tier": PREPRINT, "retraction_status": "none",
-                              "retraction_checked_at": RECIENTE}}
+                              "retraction_checked_at": RECIENTE, "retraction_source": "pubmed"}}
     out = _run(meta, corpus=corpus)
     assert "primera línea" in out["response"], "lo sostenido por la GPC se entrega"
     assert "insuficiencia renal" not in out["response"], \

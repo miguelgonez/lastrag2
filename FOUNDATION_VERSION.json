@@ -1,10 +1,10 @@
 {
   "name": "lastrag-foundation",
   "display_name": "LastRAG 2.0 Foundation",
-  "version": "2.0.0",
-  "version_note": "release definitivo: commit limpio 22519f48 (12 ficheros P0.5 commiteados), tree hash git reproducible, suite 26/26 verificada desde checkout limpio (/tmp/lastrag_release_test, 2026-10-06)",
+  "version": "2.1.0",
+  "version_note": "release vigente v2.1.0 = commit e938c88 (tag publicado 23-oct-2026; capas de grado medico 3-5 + instrumentos de curacion + suite ejecutable 172/3). El release historico v2.0.0 (22519f48, 6-oct) permanece pineado en state_pin como baseline inmutable.",
   "contract_version": "1.0",
-  "date": "2026-10-06",
+  "date": "2026-10-23",
   "canon": "OMEGA-MR2-LASTRAG-FOUNDATION-CANON v1.3.0 (congelado vigente; ~/ZCodeProject/omega_architecture_canon/LASTRAG_FOUNDATION_CANON.md)",
   "role": "Componente horizontal reutilizable y forkable de OMEGA-MR2. NO es una solucion clinica.",
   "public_contract": [
