@@ -262,11 +262,39 @@ contra retractaciones. Hasta que la ingesta (`core/ingestion.py`,
 `scripts/ingest_pubmed_delta.py`) escriba `source_meta`, toda respuesta sale
 `affirmable=false` y lo dice. Es el estado honesto, no un fallo.
 
-**Pendiente para cerrar el expediente del verificador con modelo real:**
-(1) re-ejecutar `tests/test_e2e_sovereign.py` en el Spark con ALIA como
-juez — el E2E del 15-oct es ANTERIOR a las capas 3-4 y su acta no las cubre;
-(2) descargar FastEmbed multilingüe y medir el método semántico;
-(3) tasa de falsos bloqueos sobre las 24 consultas congeladas de Wave 1.
+**Expediente del verificador con modelo real (ventana del 23-oct-2026, spark-3de7):**
+
+- **(1) CERRADO** — `tests/test_e2e_sovereign.py` re-ejecutado en el Spark
+  sobre `b1ea6a6` (capas 3-5 activas) con ALIA real como juez: **3 passed en
+  147,6 s** (endpoint `alia-nexthealth-inference` :8024, ventana 4096,
+  Neo4j `lastrag-t3-neo4j` :17687). El acta del 15-oct ya no es la única
+  cobertura E2E: la de hoy cubre abstención, anclaje, verificación y
+  procedencia.
+- **(2) CERRADO** — FastEmbed multilingüe
+  (`paraphrase-multilingual-MiniLM-L12-v2`, ONNX 384d, ~470 MB) descargado
+  en el Spark; `run_verifier_benchmark` con embedder real + juez real:
+  métodos `semantic: applied` y `judge: applied`.
+- **Resultado del juez REAL (negativo honesto):** el 0/6 falsos bloqueos del
+  acta anterior era del juez SIMULADO por reglas y **no se reproduce con
+  ALIA**: fugas **0** (se mantiene — ninguna afirmación no respaldada pasa),
+  pero falsos bloqueos **2/6** persisten y el juez real introduce dos
+  desviaciones hacia `CONTRADICTED` (parafrasis_fuerte_2, polaridad_1) —
+  exact 11/14 vs 12/14 del léxico solo. El juez se equivoca SIEMPRE hacia el
+  bloqueo, nunca hacia la fuga: dirección fail-closed segura, coste de
+  recall. Siguiente paso: prompt del juez (MCQ) y umbrales
+  `semantic_min_lexical`/`contradiction_min_overlap` con los 14 casos como
+  regresión.
+- **(3) SIGUE ABIERTO** — tasa de falsos bloqueos sobre las 24 consultas
+  congeladas de Wave 1 (no cubierto por la ventana del 23-oct).
+- **Notas de infraestructura para repetir la ventana:** imagen
+  `vllm/vllm-openai:v0.22.0`, `--gpu-memory-utilization 0.63 --max-num-seqs 4
+  --enforce-eager --dtype bfloat16 --max-model-len 4096` (la 0.92 por defecto
+  no cabe junto a qwen-AESPLA/GLiNER en producción; carga de 17 shards ≈ 9
+  min). ⚠️ La memoria de la GB10 es unificada: los 81 GB de ALIA son TAMBIÉN
+  RAM del sistema — dejar ≥8 GB libres o el benchmark muere por OOM sin
+  traceback (SIGKILL no vuelca el buffer; usar `python -u`). Durante la
+  ventana se pausó ComfyUI (videocuentos, inactivo) y se restauró después.
+
 Controles ejercitados (permitido + bloqueado por capa):
 `tests/test_abstencion_grado_medico.py` (8),
 `tests/test_anclaje_claim_evidencia.py` (16) y
