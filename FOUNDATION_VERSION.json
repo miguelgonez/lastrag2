@@ -41,15 +41,25 @@
     "tests": "tests/test_abstencion_grado_medico.py (8) + tests/test_anclaje_claim_evidencia.py (16) + tests/test_verificador_claims.py (22) + tests/test_procedencia_fuente.py (16)"
   },
   "state_pin": {
-    "release_commit": "22519f48122e2e6fc306d2e798d13849ff4000cb",
-    "git_tree_sha1": "3182506b1b10569aaba067b3a0607c6c853d1f2d",
-    "git_tree_note": "git rev-parse HEAD^{tree} del release commit: hash reproducible del arbol exacto",
-    "predecessor_candidate": {
-      "git_commit": "9a45e086e5784bdae3168de3f8a06b5cb2bb5a7e",
-      "dirty_files": 12,
-      "ad_hoc_tree_sha256": "636d8f23337510e81a746f8520aa328e6d315919caf84b008137f25328d1d2e8"
-    },
-    "clean_checkout_verification": "clone a /tmp + suite 26/26 (2026-10-06)"
+    "version": "2.1.0",
+    "date": "2026-10-23",
+    "release_commit": "e938c88",
+    "tag": "v2.1.0",
+    "packaged": "capas grado medico 3-5 (d4d6a18/d947e21/b1ea6a6) + abstencion (223f981) + auditoria (e0c10fd) + curacion (2ec4fe2) + acta juez real (26b1830) + suite ejecutable (82cd1af)",
+    "default_behavior_change": "DECIDIDO POR EL PI 22/23-oct: abstencion sin evidencia, retirada de frases no respaldadas, affirmable=false hasta curacion de source_meta. NO preserva el comportamiento — ver RELEASES.md.",
+    "contract_version": "1.0 (sin bump; validado por arquitecto 23-oct)",
+    "evidence": "E2E 3/3 capas 3-5 con juez ALIA real; fugas 0; falsos bloqueos 2/6 declarados; suite 172 pass/3 skip",
+    "v2_0_0_pin": {
+      "release_commit": "22519f48122e2e6fc306d2e798d13849ff4000cb",
+      "git_tree_sha1": "3182506b1b10569aaba067b3a0607c6c853d1f2d",
+      "git_tree_note": "git rev-parse HEAD^{tree} del release commit: hash reproducible del arbol exacto",
+      "predecessor_candidate": {
+        "git_commit": "9a45e086e5784bdae3168de3f8a06b5cb2bb5a7e",
+        "dirty_files": 12,
+        "ad_hoc_tree_sha256": "636d8f23337510e81a746f8520aa328e6d315919caf84b008137f25328d1d2e8"
+      },
+      "clean_checkout_verification": "clone a /tmp + suite 26/26 (2026-10-06)"
+    }
   },
   "verification": {
     "suite_release": "26/26 pass (2026-10-06, dos corridas, checkout limpio)",
