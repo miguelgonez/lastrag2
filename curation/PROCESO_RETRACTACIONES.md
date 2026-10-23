@@ -25,6 +25,11 @@
 2. **Barrido completo cada 90 días** sobre todo el corpus: la mitad del `max_check_age_days=180` del motor, de modo que ninguna fuente cualificada pueda caducar (quedar >180 días) sin haber pasado por un barrido. 48.399 PMIDs ≈ 3 min de E-utilities + un cruce local contra el CSV de RW.
 3. Cada pasada re-estampa `retraction_checked_at` = fecha ISO de la comprobación (UTC), aunque el estado no cambie: la vigencia es del chequeo, no del hallazgo.
 
+**Adiciones del arquitecto (23-oct, aprobadas):**
+
+4. **Un hallazgo de retractación es un EVENTO, no espera al barrido**: en cuanto una fuente (vía alerta, ingestión nueva o cruce RW) aparezca retractada o con expresión de preocupación, se re-estampa inmediatamente su `retraction_status` y los documentos afectados quedan bloqueados (la capa 5 ya los retiene por contrato) — sin esperar al ciclo de 90 días.
+5. **Cada estampado registra FUENTE y FECHA por documento** (`retraction_source`: `pubmed` | `rwdb` | `pubmed+rwdb`), que es el contrato de trazabilidad de la capa 5. La discrepancia entre fuentes se anota en `note`, no se promedia.
+
 ## Estado que deja la curación (contrato con capa 5)
 
 ```json
@@ -32,6 +37,7 @@
   "tier": "peer_reviewed",
   "retraction_status": "none" | "retracted" | "concern" | "unknown",
   "retraction_checked_at": "2026-10-23",
+  "retraction_source": "pubmed" | "rwdb" | "pubmed+rwdb",
   "identifier": "<PMID o DOI>",
   "note": "opcional: discrepancia RW/PubMed, motivo de RW, etc."
 }
