@@ -1,0 +1,49 @@
+{
+  "protocol": "bench/BENCHMARK_WAVE1.md (fase 1, congelado 15-oct-2026)",
+  "harness_sha256": "b2b61ae611cc3c721209767decbb7659cedf8a598719a4af27cce8e076297b36",
+  "corpus": {
+    "rows": 1095,
+    "usable_abstracts": 1095,
+    "gold": "topic_label_silver (declarado, no clinico)"
+  },
+  "embedder": "local-hash-ngram-256-v1",
+  "top_k": 5,
+  "modes": {
+    "vector_only": {
+      "topical_precision@5": 0.4667,
+      "first_hit_mrr": 0.616,
+      "citation_support@5": 1.0,
+      "p50_ms": 1.1,
+      "p95_ms": 5.7,
+      "n": 24,
+      "empty_rate": 0.0
+    },
+    "index_only": {
+      "topical_precision@5": 0.4,
+      "first_hit_mrr": 0.4167,
+      "citation_support@5": 0.7083,
+      "p50_ms": 4.4,
+      "p95_ms": 11.4,
+      "n": 24,
+      "empty_rate": 0.2917
+    },
+    "hybrid": {
+      "topical_precision@5": 0.5167,
+      "first_hit_mrr": 0.6042,
+      "citation_support@5": 1.0,
+      "p50_ms": 6.4,
+      "p95_ms": 12.5,
+      "n": 24,
+      "empty_rate": 0.0
+    }
+  },
+  "graph_context": {
+    "queries_with_nodes": 6,
+    "total_queries": 24
+  },
+  "limitations": [
+    "embedder desarrollo no semantico",
+    "oro tematico silver",
+    "sin baseline LastRAG-MD (fase 2)"
+  ]
+}

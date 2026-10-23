@@ -124,6 +124,8 @@ class LocalLLM(LLMClient):
         self.backoff = backoff
         self.temperature = temperature
         self._client = None
+        self._max_model_len = None  # cache de metadata (clamp de max_tokens)
+        self.last_token_adjust: Optional[dict] = None
 
     def _http(self):
         import httpx
@@ -138,12 +140,41 @@ class LocalLLM(LLMClient):
             await self._client.aclose()
             self._client = None
 
+    async def _model_len(self) -> Optional[int]:
+        """Ventana del modelo segun /v1/models (vLLM la expone como
+        max_model_len). Cacheada; si no se puede consultar, None (sin clamp:
+        el servidor fallara cerrado si el valor excede)."""
+        if self._max_model_len is None:
+            try:
+                meta = await self.model_metadata()
+                self._max_model_len = meta.get("max_model_len") or meta.get("context_length")
+            except Exception:
+                return None
+        return self._max_model_len
+
+    async def _clamp_tokens(self, prompt: str, max_tokens: int) -> int:
+        """Ajusta max_tokens a la ventana real del modelo, reservando una
+        estimacion conservadora del prompt. Tokenizadores reales consumen
+        ~3-4 chars/token en espanol (leccion 15-oct: con //4 el prompt real
+        456 tok + salida 3641 = 4097 > 4096). Adaptacion de capacidad, no
+        degradacion: el ajuste queda en self.last_token_adjust."""
+        limit = await self._model_len()
+        if not limit:
+            self.last_token_adjust = None
+            return max_tokens
+        reserve = len(prompt) // 3 + 64
+        clamped = min(max_tokens, max(256, limit - reserve), limit)
+        self.last_token_adjust = {"requested": max_tokens, "sent": clamped,
+                                  "max_model_len": limit} if clamped != max_tokens else None
+        return clamped
+
     # ------------------------------------------------------------
     # Generación (no streaming)
     # ------------------------------------------------------------
     async def generate(
         self, prompt: str, *, max_tokens: int = 8192
     ) -> str:
+        max_tokens = await self._clamp_tokens(prompt, max_tokens)
         payload = {
             "model": self.model,
             "messages": [{"role": "user", "content": prompt}],
@@ -177,6 +208,7 @@ class LocalLLM(LLMClient):
     async def stream_deltas(
         self, prompt: str, *, max_tokens: int = 8192
     ) -> AsyncIterator[str]:
+        max_tokens = await self._clamp_tokens(prompt, max_tokens)
         payload = {
             "model": self.model,
             "messages": [{"role": "user", "content": prompt}],

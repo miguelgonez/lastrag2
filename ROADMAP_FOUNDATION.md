@@ -49,17 +49,37 @@ LocalLLM → Answer + Citation`, sin mocks.
 
 ## Gate — FOUNDATION-T3 = REAL_E2E_PASS
 
-| # | Control | Estado 6-oct-2026 |
+**SUPERADO en su núcleo el 15-oct-2026**: `tests/test_e2e_sovereign.py` 3/3
+PASS en el Spark (spark-3de7) con ALIA real (vLLM `alia-nexthealth-inference`
+:8024, ventana 4096) y Neo4j real (`lastrag-t3-neo4j` :17687, árbol del
+piloto PubMed + fixture). Cadena completa sin mocks: pregunta → router
+(graph→hybrid con degradación declarada) → Qdrant local persistente +
+structural search real (el híbrido también recuperó fragmentos PubMed del
+grafo de 406 documentos) → grade MCQ de ALIA (evidencia validada) →
+generación real → respuesta con citas resueltas del árbol. Suites: Spark
+78 pass/3 skip; MBP 79 pass/2 skip.
+
+| # | Control | Estado 15-oct-2026 |
 |---|---|---|
-| 1 | Qdrant real PASS | **PASS (modo local persistente, embedder desarrollo declarado)** |
-| 2 | Neo4j real PASS | **UNKNOWN — sin servidor hoy; test listo, se ejecuta con `LASTRAG_TEST_NEO4J_URI`** |
-| 3 | LocalLLM real PASS | **Código implementado; UNKNOWN contra endpoint real (no hay vLLM/Ollama/LM Studio activos hoy)** |
-| 4 | FastAPI PASS | Import OK; HTTP real pendiente |
-| 5 | Evidence Pack PASS | Salida con evidence+citations+degradations |
-| 6 | Citation provenance PASS | Parcial (block_id real de Qdrant; resolución Neo4j pendiente control 2) |
-| 7 | PHI/local path PASS | Gate PHI existente; path Qdrant local ejercitado |
-| 8 | Cold-start PASS | PASS (reinicio de cliente sobre almacenamiento persistente) |
-| 9 | Restart persistence PASS | PASS (Qdrant modo local) |
+| 1 | Qdrant real PASS | **PASS** (local persistente en E2E; embedder desarrollo declarado) |
+| 2 | Neo4j real PASS | **PASS** (lastrag-t3-neo4j: esquema + árbol + fulltext + citas en el E2E) |
+| 3 | LocalLLM real PASS | **PASS contra ALIA** (grade MCQ + generación; clamp a max_model_len con reserva real de prompt) |
+| 4 | FastAPI PASS | **PASS transporte** (uvicorn en socket real: HTML, /api/status honesto sin clave, 400/503 declarados; cableado soberano del app = deuda de despliegue) |
+| 5 | Evidence Pack PASS | **PASS** (evidence[] + citations[] + degradations[] en la salida del run real) |
+| 6 | Citation provenance PASS | **PASS** (locator=block_id; citas documento/sección/página desde el árbol Neo4j) |
+| 7 | PHI/local path PASS | **PASS** (factory LASTRAG_PHI_MODE bloquea cloud; contrato assert_phi_allowed; pipeline comprueba ANTES de parsear; 5 tests) |
+| 8 | Cold-start PASS | **PASS** (reinicio de cliente sobre almacenamiento persistente) |
+| 9 | Restart persistence PASS | **PASS** (Qdrant modo local) |
+
+Lecciones del 15-oct (andamiaje adaptado al modelo soberano): (1) ALIA no
+sigue instrucciones libres pero sí formato test — el grade va en MCQ A/B;
+un ejemplo guiado dentro del prompt LO DESestabiliza (prompt mínimo =
+6/6 estable). (2) El clamp de max_tokens debe reservar ~3 chars/token del
+prompt (con 4 el prompt real 456 tok + 3641 pedidos = 4097 > 4096).
+(3) Un PDF de fixture con insert_text TRUNCA las líneas en el borde de
+página y el grade con razón lo rechaza — insert_textbox envuelve. (4) El
+driver async de Neo4j no puede compartirse entre bucles de eventos:
+cada escenario construye el suyo.
 
 **Regla de oro: no puede haber fallback silencioso.** Si graph falla y usa hybrid,
 queda registrado como DEGRADACIÓN en la respuesta, no como PASS. El motor expone
@@ -105,8 +125,47 @@ real (motor local persistente) + 5 registro de degradaciones + 3 E2E soberano.
   `LASTRAG_E2E_LLM_ENDPOINT` (+ `LASTRAG_TEST_NEO4J_URI`) la MISMA prueba
   ejecuta la cadena completa y exige respuesta con citas (camino T3).
 - Reparado: instalación editable del venv apuntaba a ruta muerta
-  (`/Users/yeye/Documents/py/...`); reinstalada sobre la ruta real.
+  (`~/Documents/py/...`); reinstalada sobre la ruta real.
 
 UNKNOWN declarados (no simulados): servidor Neo4j (sin Docker/OrbStack hoy),
 endpoint de modelo real, Docling, embedder biomédico real, HTTP de FastAPI
 en transporte. El gate FOUNDATION-T3 **NO está superado**.
+
+## Acta completa T3 (15-oct-2026, tarde)
+
+Los 9 controles del gate quedan cubiertos: transporte FastAPI real
+(`tests/test_fastapi_transport.py`, uvicorn socket efímero, arranque degradado
+DECLARADO sin clave) y camino PHI explícito (`tests/test_phi_gate.py`, tres
+capas fail-closed sin red). Suites: MBP 87 pass/2 skip; Spark 89+ pass tras
+instalar fastapi en su venv. Commit del acta + bench en el historial.
+
+## Wave 1 — Fase 1 ejecutada (15-oct-2026)
+
+Protocolo congelado en `bench/BENCHMARK_WAVE1.md` ANTES de medir; harness
+`bench/run_wave1.py` (hash registrado en el resultado). Corpus: los 1.095
+abstracts del piloto ingeridos COMPLETOS en Qdrant (colección wave1) y en el
+árbol Neo4j T3 (cierra el 406→1.095). 24 consultas congeladas (6/tema):
+
+| modo | prec_temática@5 | MRR_1er_acierto | citas@5 | p50 | p95 | vacío |
+|---|---|---|---|---|---|---|
+| vector_only (hash dev) | 0.467 | 0.616 | 1.00 | 1.1 ms | 5.7 ms | 0% |
+| index_only (Neo4j FT) | 0.400 | 0.417 | 0.708* | 4.4 ms | 11.4 ms | 29.2% |
+| hybrid (fusión locator) | **0.517** | 0.604 | **1.00** | 6.4 ms | 12.5 ms | **0%** |
+
+(*index_only cita 100% cuando devuelve algo; el 0.708 incluye sus 7/24
+consultas vacías.) Lecturas honestas: (1) la fusión híbrida suma precisión y
+ELIMINA la abstención del estructural; (2) paridad de citación 100% a escala
+piloto — todo resultado cita el árbol propio; (3) la recuperación NO es el
+cuello de botella (ms): lo es el QA con ALIA (~25-30 s/consulta, del E2E);
+(4) la precisión ~0.5 es cota INFERIOR con embedder dev no semántico y oro
+temático silver con solapamientos (metformin/sglt2/heart_failure comparten
+espacio clínico); (5) grafo clínico T3 aún pobre (nodos en 6/24 consultas).
+Escala de abstracts: `~/lastrag_pubmed_pilot/PLAN_ESCALA.md` (oleadas + reglas).
+
+## Roadmap post-T3 (hallazgos FOUNDATION-T3, 6-oct-2026 — recibo b9b7d50f…)
+
+- **F1 · max_tokens acoplado a max_model_len**: el motor debe clampar/negociar `max_tokens` contra `model_metadata` del endpoint (el default 8192 provocó HTTP 400 explícito contra vLLM 4096). Estado: T3 superado con adaptador declarado; el clamp nativo es pendiente.
+- **F2 · gate PHI no reactivo a runtime**: `Settings` (dataclass) captura el env al importar; el gate no reacciona a cambios de entorno en runtime tras el primer import. Pendiente: defaults lazy o validación en construcción.
+- **F3 · política single-owner para Qdrant path=**: Qdrant local no admite dos clientes sobre el mismo path; documentar ciclo de vida de proceso (o Qdrant servidor para concurrencia).
+
+Nota de procedencia: estos puntos no rompen ningún gate de T3; el release acreditado permanece pineado en 22519f48 / tree 3182506b.

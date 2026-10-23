@@ -31,6 +31,9 @@ class Settings:
     qdrant_api_key: Optional[str] = os.getenv("QDRANT_API_KEY")
     qdrant_vector_size: int = int(os.getenv("QDRANT_VECTOR_SIZE", "768"))
 
+    # Delta (Fase 2 — piloto PubMed, solo lectura, host Spark)
+    delta_path: str = os.getenv("DELTA_PATH", "")
+
     # Neo4j (LastIndex + grafo clinico)
     neo4j_url: str = os.getenv("NEO4J_URL", "bolt://localhost:7687")
     neo4j_user: str = os.getenv("NEO4J_USERNAME", "neo4j")
@@ -55,6 +58,12 @@ def build_backend(settings: Optional[Settings] = None) -> VectorBackend:
             api_key=settings.qdrant_api_key,
             vector_size=settings.qdrant_vector_size,
         )
+
+    if settings.backend == "delta":
+        # Fase 2 (piloto PubMed): solo lectura, local-first; requiere
+        # pyspark+delta en el entorno (host Spark / contenedor).
+        from .delta_backend import DeltaBackend
+        return DeltaBackend(settings.delta_path)
 
     if settings.backend == "gemini":
         from .gemini_backend import GeminiFileSearchBackend

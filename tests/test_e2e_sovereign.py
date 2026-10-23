@@ -6,13 +6,15 @@ embedder de desarrollo declarado) → LastIndex (Neo4j real si
 LASTRAG_TEST_NEO4J_URI, degradacion declarada si no) → grade/generación
 (LocalLLM real; fail-closed si no hay endpoint).
 
-HOY (6-oct-2026), sin endpoint LLM ni servidor Neo4j en el Mac, la cadena
-completa NO puede terminar en respuesta: esta prueba acredita (a) que la
-parte real funciona y (b) que el sistema FALLA CERRADO y DECLARA
-DEGRADACIONES en lugar de responder con apariencia de exito. El gate
-FOUNDATION-T3 requiere ademas LASTRAG_E2E_LLM_ENDPOINT (vLLM/Ollama/LM
-Studio) y LASTRAG_TEST_NEO4J_URI; con ambos, esta misma prueba ejecuta la
-cadena completa y exige respuesta con citas y sin degradaciones no declaradas.
+Verificado 15-oct-2026 contra el Spark: ALIA (vLLM :8024) + lastrag-t3-neo4j
+(:17687) → REAL_E2E_PASS. Requisitos de infraestructura: todos los
+componentes asíncronos (driver Neo4j, httpx) se crean DENTRO del mismo
+asyncio.run que ejecuta la consulta; compartirlos entre bucles de eventos
+rompe el driver (lección del 15-oct).
+
+Variables: LASTRAG_E2E_LLM_ENDPOINT, LOCAL_LLM_MODEL,
+LASTRAG_E2E_LLM_TIMEOUT, LASTRAG_TEST_NEO4J_URI, LASTRAG_TEST_NEO4J_USER,
+LASTRAG_TEST_NEO4J_PASSWORD.
 """
 
 from __future__ import annotations
@@ -39,6 +41,12 @@ from core.llm.base import LocalLLM, LocalLLMError  # noqa: E402
 
 E2E_LLM_ENDPOINT = os.getenv("LASTRAG_E2E_LLM_ENDPOINT")
 E2E_NEO4J_URI = os.getenv("LASTRAG_TEST_NEO4J_URI")
+E2E_NEO4J_USER = os.getenv("LASTRAG_TEST_NEO4J_USER", "neo4j")
+E2E_NEO4J_PASSWORD = os.getenv("LASTRAG_TEST_NEO4J_PASSWORD", "neo4j")
+# Sin endpoint: timeout minimo (se espera fail-closed rapido). Con endpoint
+# real (vLLM en carga fria): margen generoso.
+E2E_LLM_TIMEOUT = float(os.getenv("LASTRAG_E2E_LLM_TIMEOUT",
+                                  "120.0" if E2E_LLM_ENDPOINT else "3.0"))
 
 PDF_TEXT_PAGE1 = (
     "Guia sintetica de farmacovigilancia\n"
@@ -54,6 +62,8 @@ PDF_TEXT_PAGE2 = (
     "en las poblaciones estudiadas durante los ciclos de tratamiento.\n"
 )
 
+QUERY = "que interaccion y seguridad tiene la sepranolona en el tdpm"
+
 
 @pytest.fixture(scope="module")
 def fixture_pdf(tmp_path_factory):
@@ -61,99 +71,120 @@ def fixture_pdf(tmp_path_factory):
     doc = fitz.open()
     for text in (PDF_TEXT_PAGE1, PDF_TEXT_PAGE2):
         page = doc.new_page()
-        page.insert_text((72, 90), text, fontsize=11)
+        # insert_textbox envuelve las lineas; insert_text las trunca en el
+        # borde de la pagina (los bloques salian cortados a mitad de frase y
+        # el grade razonablemente los rechazaba).
+        page.insert_textbox(fitz.Rect(50, 60, 545, 780), text, fontsize=11)
     doc.save(str(path))
     doc.close()
     return str(path)
 
 
-@pytest.fixture(scope="module")
-def real_stack(fixture_pdf, tmp_path_factory):
-    """Parser real + Qdrant real (persistente) + LastIndex (real o declarado)."""
-    async def build():
-        parsed = StructuralParser().parse(fixture_pdf)
-        assert parsed.blocks, "el parser real debe producir bloques del PDF real"
+@pytest.fixture()
+def real_stack(fixture_pdf, tmp_path):
+    """Parseo real + Qdrant real persistente. Los componentes async (LastIndex,
+    LocalLLM) se construyen dentro de cada escenario: un driver compartido
+    entre bucles de eventos distintos se rompe."""
+    parsed = StructuralParser().parse(fixture_pdf)
+    assert parsed.blocks, "el parser real debe producir bloques del PDF real"
 
-        storage = tmp_path_factory.mktemp("qdrant_e2e")
-        backend = QdrantBackend(
-            path=str(storage), collection="lastrag_e2e",
-            embedder=HashingEmbedder(), vector_size=HashingEmbedder.dim,
-            embedding_model=HashingEmbedder.model_id,
-        )
+    backend = QdrantBackend(
+        path=str(tmp_path / "qdrant"), collection="lastrag_e2e",
+        embedder=HashingEmbedder(), vector_size=HashingEmbedder.dim,
+        embedding_model=HashingEmbedder.model_id,
+    )
+
+    def make_lastindex():
+        if E2E_NEO4J_URI:
+            return LastIndex(E2E_NEO4J_URI, E2E_NEO4J_USER, E2E_NEO4J_PASSWORD)
+        return LastIndex("bolt://127.0.0.1:9", "neo4j", "neo4j",
+                         connection_timeout=1.5)
+
+    def make_llm():
+        return LocalLLM(E2E_LLM_ENDPOINT or "http://127.0.0.1:9/v1",
+                        model=os.getenv("LOCAL_LLM_MODEL", "alia-nexthealth"),
+                        max_retries=0, timeout=E2E_LLM_TIMEOUT)
+
+    return parsed, backend, make_lastindex, make_llm
+
+
+def test_sovereign_e2e_chain(real_stack):
+    parsed, backend, make_lastindex, make_llm = real_stack
+
+    async def scenario():
         await backend.initialize()
         result = await backend.ingest(
-            fixture_pdf, document_id=parsed.document_id,
+            parsed.source_path, document_id=parsed.document_id,
             metadata={"blocks": [asdict(b) for b in parsed.blocks]},
         )
         assert result.status == "ok" and result.chunks_indexed == len(parsed.blocks)
-
+        lastindex = make_lastindex()
         if E2E_NEO4J_URI:
-            lastindex = LastIndex(E2E_NEO4J_URI, "neo4j", "neo4j")
-            await lastindex.ingest_tree(parsed)   # arbol real persistido
-        else:
-            # Sin servidor: puerto cerrado + timeout corto -> degradacion rapida
-            lastindex = LastIndex("bolt://127.0.0.1:9", "neo4j", "neo4j",
-                                  connection_timeout=1.5)
-        return parsed, backend, lastindex
-
-    return asyncio.run(build())
-
-
-def test_sovereign_e2e_chain(fixture_pdf, real_stack):
-    parsed, backend, lastindex = real_stack
-    engine = LastRAGEngine(backend, lastindex,
-                           LocalLLM(E2E_LLM_ENDPOINT or "http://127.0.0.1:9/v1",
-                                    max_retries=0, timeout=3.0))
-
-    query = "que interaccion y seguridad tiene la sepranolona en el tdpm"
+            await lastindex.setup_schema()
+            await lastindex.ingest_tree(parsed)
+        engine = LastRAGEngine(backend, lastindex, make_llm())
+        try:
+            return await engine.run(QUERY)
+        finally:
+            await lastindex.close()
 
     if E2E_LLM_ENDPOINT:
-        # Camino completo (cuando exista endpoint): respuesta + citas + degradaciones solo esperadas
-        out = asyncio.run(engine.run(query))
-        assert out["response"].strip()
+        out = asyncio.run(scenario())
+        assert out["response"].strip(), "respuesta generada por el LLM real"
         assert out["evidence"], "la respuesta debe apoyarse en evidencia recuperada real"
         for chunk in out["evidence"]:
             assert chunk["locator"].startswith("blk_"), "locator = block_id del arbol"
-        unexpected = [d for d in out["degradations"]
-                      if d.get("component") == "lastindex" and E2E_NEO4J_URI]
-        assert not unexpected, "con Neo4j real no cabe degradacion de LastIndex"
+        if E2E_NEO4J_URI:
+            lastindex_degraded = [d for d in out["degradations"]
+                                  if d.get("component") == "lastindex"]
+            assert not lastindex_degraded, \
+                f"con Neo4j real no cabe degradacion de LastIndex: {lastindex_degraded}"
+            assert out["citations"], "las citas deben resolverse desde el arbol real"
+            assert all(c.get("page") is not None or c.get("section")
+                       for c in out["citations"])
     else:
-        # Hoy: la cadena llega hasta generacion y FALLA CERRADO (sin inventar respuesta)
+        # Sin endpoint: la cadena llega hasta generacion y FALLA CERRADO
         with pytest.raises(LocalLLMError) as excinfo:
-            asyncio.run(engine.run(query))
+            asyncio.run(scenario())
         assert excinfo.value.reason in {"ENDPOINT_UNREACHABLE", "HTTP_ERROR"}
 
 
 def test_sovereign_retrieval_real_before_generation(real_stack):
     """La recuperacion real funciona aunque el LLM no exista: se mide por
-    debajo del motor, contra Qdrant real, y las degradaciones de grafo y
-    de LastIndex quedan declaradas en un run que termina en aviso honesto."""
-    parsed, backend, lastindex = real_stack
+    debajo del motor, contra Qdrant real, y su salud es UP."""
+    parsed, backend, make_lastindex, make_llm = real_stack
 
     async def scenario():
+        await backend.initialize()
+        await backend.ingest(
+            parsed.source_path, document_id=parsed.document_id,
+            metadata={"blocks": [asdict(b) for b in parsed.blocks]},
+        )
         result = await backend.search("seguridad sepranolona ensayos", top_k=3)
+        health = await backend.health()
         assert result.chunks, "Qdrant real debe recuperar el bloque indexado"
         assert result.chunks[0].locator.startswith("blk_")
-        health = await backend.health()
         assert health["status"] == "UP"
-        return result
 
     asyncio.run(scenario())
 
 
 def test_engine_degrades_graph_and_lastindex_loudly(real_stack):
-    """Con route=graph y sin Neo4j: hybrid ejecutado, degradaciones declaradas
-    incluso aunque el run termine fallando cerrado en el LLM."""
-    parsed, backend, lastindex = real_stack
-    engine = LastRAGEngine(backend, lastindex,
-                           LocalLLM("http://127.0.0.1:9/v1", max_retries=0, timeout=3.0))
+    """Con route=graph y sin Neo4j graph manager: hybrid ejecutado y declarado;
+    con Neo4j ausente ademas, la degradacion de LastIndex se declara."""
+    parsed, backend, make_lastindex, make_llm = real_stack
 
     async def probe():
-        state = {"query": "que interaccion tiene la sepranolona con otros farmacos",
-                 "route": "", "route_effective": "", "degradations": [],
-                 "chunks": [], "active_graph": [], "resurrected_nodes": [],
-                 "external_context": "", "response": "",
-                 "confidence": 0.0, "is_general_knowledge": False}
+        await backend.initialize()
+        await backend.ingest(
+            parsed.source_path, document_id=parsed.document_id,
+            metadata={"blocks": [asdict(b) for b in parsed.blocks]},
+        )
+        engine = LastRAGEngine(backend, make_lastindex(), make_llm())
+        state = {"query": QUERY, "route": "", "route_effective": "",
+                 "degradations": [], "chunks": [], "active_graph": [],
+                 "resurrected_nodes": [], "external_context": "",
+                 "response": "", "confidence": 0.0, "is_general_knowledge": False}
         routed = await engine._route(state)
         state.update(routed)
         graph_out = await engine._graph(state)
@@ -162,8 +193,8 @@ def test_engine_degrades_graph_and_lastindex_loudly(real_stack):
     routed, graph_out = asyncio.run(probe())
     assert routed["route"] == "graph"
     assert graph_out["route_effective"] == "hybrid"
-    reasons = {d.get("reason") for d in graph_out["degradations"]}
-    assert any("NOT_CONFIGURED" in str(r) for r in reasons) or E2E_NEO4J_URI
+    reasons = {str(d.get("reason")) for d in graph_out["degradations"]}
+    assert any("NOT_CONFIGURED" in r for r in reasons) or E2E_NEO4J_URI
     if not E2E_NEO4J_URI:
         assert any(d.get("from_route") == "graph" for d in graph_out["degradations"])
-        assert graph_out["chunks"], "hybrid real entrega fragmentos de Qdrant real"
+    assert graph_out["chunks"], "hybrid real entrega fragmentos de Qdrant real"
