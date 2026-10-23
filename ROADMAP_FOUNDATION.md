@@ -318,3 +318,30 @@ restauran el contrato 1.0, no lo alteran.
 Expediente completo, hallazgos abiertos y el punto escalado al PI (discrepancia
 de fechas de T3 en el canon, que **no** se edita por estar congelado):
 `AUDITORIA_CALIDAD_20261022.md`.
+
+## Puerta (a) — falsos bloqueos Wave 1: **GATE PASS 10%** (23-oct, tarde)
+
+Prereg sellado ANTES de medir (`bench/PREREG_FALSOS_BLOQUEOS_WAVE1.md`,
+commit `b28708c`): gate ≤20% de falsos_bloqueos/retiradas_adjudicables;
+montaje idéntico al Wave 1 congelado (hash dev en recuperación; única
+variable nueva = generación ALIA + capa 4 con juez real + semántico);
+adjudicación independiente MCQ mínima (A=falso bloqueo · B=retirada
+correcta · C=fuera del denominador); límite declarado: el árbitro es el
+mismo modelo que generó y juzgó (sesgo pro-propio posible; gate
+provisional «revisable con datos»).
+
+**Resultado** (`bench/results/falsos_bloqueos_wave1.json`, 24/24 consultas,
+0 errores, 1.820 s, ventana ALIA util 0.63 en spark-3de7):
+
+- 21/24 consultas terminaron en **abstención** (doctrina grado médico
+  dominante — declarado por consulta, no oculto).
+- 24 claims emitidos en las 3 consultas productivas: 10 SUPPORTED ·
+  10 UNSUPPORTED · 3 CONTRADICTED · 1 META.
+- Adjudicación de las 10 retiradas: **9 correctas (B) · 1 falsa (A) · 0 C**
+  → **tasa 10,0% ≤ 20% → GATE PASS**.
+- El único falso bloqueo (léxico): «la evidencia disponible se centra en la
+  protección renal y cardiovascular» — frase-resumen sobre la propia
+  evidencia, candidata a clasificación META (frontera a revisar con datos).
+- Con el gate (2) del arquitecto (fugas 0 ✓ ya medido) y (a) cerrado, las
+  puertas de producción definidas quedan: curación ejecutada ✓ (puerta b,
+  23-oct) · falsos bloqueos Wave 1 ✓ (esta) — I1 sobre v2.1.x habilitada.

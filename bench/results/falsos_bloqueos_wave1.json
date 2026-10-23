@@ -1,0 +1,303 @@
+{
+ "run_date": "2026-10-23",
+ "prereg": "bench/PREREG_FALSOS_BLOQUEOS_WAVE1.md",
+ "gate": 0.2,
+ "judge": "alia-nexthealth :8024 (ventana 4096)",
+ "verdict_counts": {
+  "UNSUPPORTED": 10,
+  "CONTRADICTED": 3,
+  "META": 1,
+  "SUPPORTED": 10
+ },
+ "adjudications": {
+  "A": 1,
+  "B": 9,
+  "C": 0,
+  "UNPARSEABLE": 0
+ },
+ "tasa_falsos_bloqueos_adjudicables": 0.1,
+ "retiradas_sobre_total_claims": 0.4348,
+ "gate_result": "PASS",
+ "n_queries": 24,
+ "n_errors": 0,
+ "duration_s": 1820.0,
+ "per_query": [
+  {
+   "topic": "metformin",
+   "query": "dosis de metformina en diabetes tipo 2",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "metformin",
+   "query": "efectos gastrointestinales de la metformina",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "metformin",
+   "query": "metformina y riesgo de acidosis lactica",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "metformin",
+   "query": "metformina en insuficiencia renal cronica",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "metformin",
+   "query": "uso de metformina en prediabetes",
+   "abstained": false,
+   "affirmable": false,
+   "n_claims": 11,
+   "verdicts": {
+    "CONTRADICTED": 3,
+    "UNSUPPORTED": 8
+   },
+   "adjudications": [
+    {
+     "claim": "No se ha proporcionado ninguna citación relevante para la pregunta.",
+     "method": "lexical",
+     "arbiter": "B"
+    },
+    {
+     "claim": "No se ha proporcionado ninguna citación relevante para la pregunta.",
+     "method": "lexical",
+     "arbiter": "B"
+    },
+    {
+     "claim": "No se ha proporcionado ninguna citación relevante para la pregunta.",
+     "method": "lexical",
+     "arbiter": "B"
+    },
+    {
+     "claim": "No se ha proporcionado ninguna citación relevante para la pregunta.",
+     "method": "lexical",
+     "arbiter": "B"
+    },
+    {
+     "claim": "**Respuesta final:** No se ha encontrado evidencia que relacione el uso de metformina con la prevención o el manejo de la prediabetes en la práctica clínica hab",
+     "method": "lexical",
+     "arbiter": "B"
+    },
+    {
+     "claim": "**Abstención (grado médico).** No dispongo de evidencia suficiente en los documentos indexados para responder a esta consulta con garantías.",
+     "method": "lexical",
+     "arbiter": "B"
+    },
+    {
+     "claim": "Este sistema no responde desde conocimiento general:",
+     "method": "lexical",
+     "arbiter": "B"
+    },
+    {
+     "claim": "sin evidencia verificable, lo dice.",
+     "method": "lexical",
+     "arbiter": "B"
+    }
+   ]
+  },
+  {
+   "topic": "metformin",
+   "query": "mecanismo de accion de la metformina",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "sglt2",
+   "query": "inhibidores SGLT2 y proteccion renal",
+   "abstained": false,
+   "affirmable": false,
+   "n_claims": 7,
+   "verdicts": {
+    "SUPPORTED": 6,
+    "META": 1
+   },
+   "adjudications": []
+  },
+  {
+   "topic": "sglt2",
+   "query": "iSGLT2 en insuficiencia cardiaca",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "sglt2",
+   "query": "empagliflozina y riesgo cardiovascular",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "sglt2",
+   "query": "dapagliflozina en enfermedad renal cronica",
+   "abstained": false,
+   "affirmable": false,
+   "n_claims": 6,
+   "verdicts": {
+    "SUPPORTED": 4,
+    "UNSUPPORTED": 2
+   },
+   "adjudications": [
+    {
+     "claim": "No se ha proporcionado evidencia sobre la eficacia de la dapagliflozina en la prevención de la formación de cálculos renales;",
+     "method": "lexical",
+     "arbiter": "B"
+    },
+    {
+     "claim": "la evidencia disponible se centra en la protección renal y cardiovascular.",
+     "method": "lexical",
+     "arbiter": "A"
+    }
+   ]
+  },
+  {
+   "topic": "sglt2",
+   "query": "inhibidores de SGLT2 y cetoacidosis",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "sglt2",
+   "query": "beneficios cardiovasculares de los iSGLT2",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "heart_failure",
+   "query": "tratamiento de la insuficiencia cardiaca con fraccion reducida",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "heart_failure",
+   "query": "diureticos de asa en insuficiencia cardiaca",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "heart_failure",
+   "query": "insuficiencia cardiaca y hierro intravenoso",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "heart_failure",
+   "query": "betabloqueantes en insuficiencia cardiaca cronica",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "heart_failure",
+   "query": "hospitalizaciones por insuficiencia cardiaca",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "heart_failure",
+   "query": "farmacologia de la insuficiencia cardiaca",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "lung_screening",
+   "query": "cribado de cancer de pulmon con tomografia de baja dosis",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "lung_screening",
+   "query": "nodulos pulmonares en el cribado",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "lung_screening",
+   "query": "tabaquismo y deteccion precoz de cancer de pulmon",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "lung_screening",
+   "query": "efectividad del screening pulmonar",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "lung_screening",
+   "query": "criterios de elegibilidad para cribado pulmonar",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "lung_screening",
+   "query": "radiografia frente a TAC en deteccion de cancer de pulmon",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  }
+ ]
+}
