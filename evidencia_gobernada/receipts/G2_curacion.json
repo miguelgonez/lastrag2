@@ -1,0 +1,25 @@
+{
+ "gate": "G2",
+ "measured_at": "2026-10-23T23:17:26",
+ "by": "zcode@MBP",
+ "inputs_sha256": {
+  "sweep_receipt": "0ef9118b5f0f05135525841ff240b989cf4fb1cd1f0bf1d781f61fa5fbda944e",
+  "source_meta": "3fbfc9b29d3074d4e0c77257b7e8472986a0558768e7fab515a1cca586257aab",
+  "sweep_script": "c6a8dc16523fcac0650f3e9bc26830fbd3ef908ac3435de866c92ea03c23d2ca",
+  "corpus_manifest": "8d7b308332b3a4fde585e049b3ccfced7f3b562665248ff95893e0d82da8b0b2"
+ },
+ "metrics": {
+  "corpus_docs": 48399,
+  "checked_docs": 48399,
+  "unknown": 0,
+  "retracted": 84,
+  "concern": 0,
+  "max_check_age_days": 0,
+  "sources": [
+   "pubmed",
+   "rwdb"
+  ],
+  "source_meta_path": "/Users/yeye/Documents/Agentes y conocimiento/Desarrollo Tecnologico y Scripts/Entorno_Desarrollo/py/Py_LastRAG_Index/cierre_brecha_real/data/curation/source_meta_20261023.json",
+  "sweep_run_date": "2026-10-23"
+ }
+}

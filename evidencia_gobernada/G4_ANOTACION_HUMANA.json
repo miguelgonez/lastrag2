@@ -1,0 +1,74 @@
+{
+ "gate": "G4",
+ "fuente": "bench/results/falsos_bloqueos_wave1.json (medicion 23-oct, declare mode)",
+ "instruccion": "Para cada frase retirada marca el veredicto HUMANO: RESPALDADA (era supported: falso bloqueo) o NO_RESPALDADA (retirada correcta). La columna 'arbitro_ALIA' es consultiva, NO vale como anotador (annotator_required=humano).",
+ "metricas_para_el_recibo": {
+  "queries": 24,
+  "supported_claims": 10,
+  "redacted_legitimate": "A RELLENAR: nº de RESPALDADA",
+  "annotator": "nombre del humano anotador"
+ },
+ "formula": "rate = redacted_legitimate / supported_claims <= 0.2",
+ "frases": [
+  {
+   "query": "uso de metformina en prediabetes",
+   "claim": "No se ha proporcionado ninguna citación relevante para la pregunta.",
+   "method": "lexical",
+   "arbiter": "B"
+  },
+  {
+   "query": "uso de metformina en prediabetes",
+   "claim": "No se ha proporcionado ninguna citación relevante para la pregunta.",
+   "method": "lexical",
+   "arbiter": "B"
+  },
+  {
+   "query": "uso de metformina en prediabetes",
+   "claim": "No se ha proporcionado ninguna citación relevante para la pregunta.",
+   "method": "lexical",
+   "arbiter": "B"
+  },
+  {
+   "query": "uso de metformina en prediabetes",
+   "claim": "No se ha proporcionado ninguna citación relevante para la pregunta.",
+   "method": "lexical",
+   "arbiter": "B"
+  },
+  {
+   "query": "uso de metformina en prediabetes",
+   "claim": "**Respuesta final:** No se ha encontrado evidencia que relacione el uso de metformina con la prevención o el manejo de la prediabetes en la práctica clínica hab",
+   "method": "lexical",
+   "arbiter": "B"
+  },
+  {
+   "query": "uso de metformina en prediabetes",
+   "claim": "**Abstención (grado médico).** No dispongo de evidencia suficiente en los documentos indexados para responder a esta consulta con garantías.",
+   "method": "lexical",
+   "arbiter": "B"
+  },
+  {
+   "query": "uso de metformina en prediabetes",
+   "claim": "Este sistema no responde desde conocimiento general:",
+   "method": "lexical",
+   "arbiter": "B"
+  },
+  {
+   "query": "uso de metformina en prediabetes",
+   "claim": "sin evidencia verificable, lo dice.",
+   "method": "lexical",
+   "arbiter": "B"
+  },
+  {
+   "query": "dapagliflozina en enfermedad renal cronica",
+   "claim": "No se ha proporcionado evidencia sobre la eficacia de la dapagliflozina en la prevención de la formación de cálculos renales;",
+   "method": "lexical",
+   "arbiter": "B"
+  },
+  {
+   "query": "dapagliflozina en enfermedad renal cronica",
+   "claim": "la evidencia disponible se centra en la protección renal y cardiovascular.",
+   "method": "lexical",
+   "arbiter": "A"
+  }
+ ]
+}
