@@ -83,6 +83,7 @@ class LastIndex:
                 return None
             return Citation(
                 document=record["document"],
+                document_id=record["document_id"],
                 chapter=record["chapter"],
                 section=record["section"],
                 page=record["page"],
@@ -123,6 +124,7 @@ class LastIndex:
                         score=float(r["score"]),
                         citation=Citation(
                             document=r["document"] or r["block_id"],
+                            document_id=r["document_id"],
                             section=r["section"],
                             page=r["page"],
                             block_id=r["block_id"],

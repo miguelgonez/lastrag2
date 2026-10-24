@@ -33,6 +33,7 @@ PICO), que por canon pertenece a la solución clínica, no al motor.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import Optional
@@ -178,14 +179,44 @@ def qualify(prov: SourceProvenance, *, today: Optional[date] = None,
 
 # ── Resolución por fragmento ─────────────────────────────────────────────
 
-def lookup(source_meta: Optional[dict], chunk: EvidenceChunk) -> SourceProvenance:
-    """Metadatos de la fuente de un fragmento: por locator, por block_id o por
-    documento (en ese orden). Sin entrada => procedencia desconocida."""
-    meta = source_meta or {}
+_PMID_RE = re.compile(r"^(?:pubmed[_:]|pmid[:_]?)(\d+)$", re.I)
+
+
+def _pmid_forms(key) -> list[str]:
+    """Formas equivalentes de una clave con PMID: 'pubmed_123' ≡ 'pmid:123' ≡ '123'."""
+    if not key:
+        return []
+    k = str(key).strip()
+    forms = [k]
+    m = _PMID_RE.match(k)
+    if m:
+        forms += [m.group(1), f"pubmed_{m.group(1)}", f"pmid:{m.group(1)}"]
+    elif k.isdigit():
+        forms += [f"pubmed_{k}", f"pmid:{k}"]
+    return forms
+
+
+def _candidate_keys(chunk: EvidenceChunk) -> list[str]:
+    """Claves de source_meta a probar por un fragmento, con todas las formas
+    PMID de cada una: locator → citation.block_id → citation.document →
+    citation.document_id (este último es el que casa en corpus PubMed, donde
+    la cita resuelve al título y el id estable va aparte)."""
     keys = [chunk.locator]
     if chunk.citation:
-        keys += [chunk.citation.block_id, chunk.citation.document]
-    for key in keys:
+        keys += [chunk.citation.block_id, chunk.citation.document,
+                 chunk.citation.document_id]
+    out: list[str] = []
+    for k in keys:
+        out += _pmid_forms(k)
+    return out
+
+
+def lookup(source_meta: Optional[dict], chunk: EvidenceChunk) -> SourceProvenance:
+    """Metadatos de la fuente de un fragmento: por locator, por block_id o por
+    documento (en ese orden), con equivalencia de formas PMID. Sin entrada =>
+    procedencia desconocida."""
+    meta = source_meta or {}
+    for key in _candidate_keys(chunk):
         if key and key in meta:
             return SourceProvenance.from_dict(meta[key])
     return SourceProvenance()

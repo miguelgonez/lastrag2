@@ -112,6 +112,7 @@ OPTIONAL MATCH (ch:Chapter {document_id: b.document_id})-[:HAS_SECTION*0..]->
                (:Section {document_id: b.document_id, path: b.section_path})
 RETURN
   coalesce(d.title, b.document_id) AS document,
+  b.document_id                   AS document_id,
   ch.title                        AS chapter,
   b.section_path                  AS section,
   b.page                          AS page,
@@ -129,6 +130,7 @@ YIELD node AS b, score
 OPTIONAL MATCH (d:Document {document_id: b.document_id})
 RETURN
   b.block_id      AS block_id,
+  b.document_id   AS document_id,
   b.text          AS text,
   b.page          AS page,
   b.section_path  AS section,

@@ -39,6 +39,7 @@ class Citation:
     `locator` que entrega el backend. Es identica venga de Gemini o Qdrant.
     """
     document: str                       # nombre / id del documento fuente
+    document_id: Optional[str] = None   # id estable del documento (p. ej. pubmed_<pmid>)
     chapter: Optional[str] = None       # capitulo (si LastIndex lo conoce)
     section: Optional[str] = None       # seccion / subseccion
     page: Optional[int] = None          # pagina exacta
