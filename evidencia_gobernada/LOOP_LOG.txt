@@ -1,8 +1,8 @@
-=== Loop evidencia gobernada · 2026-10-24T09:24:44 ===
+=== Loop evidencia gobernada · 2026-10-24T11:11:50 ===
 ✅ G0   integridad_suite       PASS     
 ✅ G1   fugas_cero             PASS     
 ✅ G2   curacion_ejecutada     PASS     
-⬜ G3   afirmabilidad          UNKNOWN  sin recibo G3_afirmabilidad.json
+✅ G3   afirmabilidad          PASS     
 ⬜ G4   falsos_bloqueos        UNKNOWN  sin recibo G4_falsos_bloqueos.json
 ⬜ G5   cobertura_corpus       UNKNOWN  sin recibo G5_cobertura.json
 ⬜ G6   recuperacion           UNKNOWN  sin recibo G6_recuperacion.json
@@ -13,11 +13,11 @@
 ⬜ G11  regulatorio            UNKNOWN  sin recibo G11_regulatorio.json
 ⬜ G12  auditoria_externa      UNKNOWN  sin recibo G12_auditoria_externa.json
 
-=== 3/13 PASS · 0 FAIL · 10 UNKNOWN ===
+=== 4/13 PASS · 0 FAIL · 9 UNKNOWN ===
 
 >>> SIGUIENTE ACCION (una sola; el loop re-mide al terminar) <<<
-puerta   : G3 · afirmabilidad
-producir : 24 consultas Wave 1 con source_meta curado: metrics {queries, answered, abstained, affirmable}; rate = affirmable/answered
-recibo   : evidencia_gobernada/receipts/G3_afirmabilidad.json  (schema: {gate, measured_at, by, inputs_sha256, metrics{...}}; sin campo pass)
-umbrales : {"affirmable_rate_min": 0.9, "queries_min": 24}
+puerta   : G4 · falsos_bloqueos
+producir : 24 consultas Wave 1 con juez real; anotacion humana de cada frase retirada: metrics {queries, supported_claims, redacted_claims, redacted_legitimate, annotator}; rate = redacted_legitimate/supported_claims
+recibo   : evidencia_gobernada/receipts/G4_falsos_bloqueos.json  (schema: {gate, measured_at, by, inputs_sha256, metrics{...}}; sin campo pass)
+umbrales : {"false_block_rate_max": 0.2, "queries_min": 24, "annotator_required": true}
 prohibido: mocks, bajar umbrales, escribir 'pass' a mano, tocar recibos de puertas anteriores, tocar PLAN_GATES.json

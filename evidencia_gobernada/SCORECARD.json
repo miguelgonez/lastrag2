@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-24T09:25:09",
+  "at": "2026-10-24T11:12:35",
   "rc": 75,
   "results": {
     "G0": {
@@ -7,10 +7,10 @@
       "status": "PASS",
       "needs_pi": false,
       "metrics": {
-        "passed": 182,
+        "passed": 191,
         "failed": 0,
-        "floor": 179,
-        "summary": "182 passed, 3 skipped in 21.90s"
+        "floor": 191,
+        "summary": "191 passed, 3 skipped in 40.33s"
       }
     },
     "G1": {
@@ -61,10 +61,233 @@
     },
     "G3": {
       "name": "afirmabilidad",
-      "status": "UNKNOWN",
+      "status": "PASS",
       "needs_pi": false,
       "metrics": {
-        "reason": "sin recibo G3_afirmabilidad.json"
+        "measured_at": "2026-10-24T08:38:40+00:00",
+        "by": "zcode@spark-3de7",
+        "metrics": {
+          "queries": 24,
+          "answered": 3,
+          "abstained": 20,
+          "affirmable": 3,
+          "per_query": [
+            {
+              "query": "dosis de metformina en diabetes tipo 2",
+              "topic": "metformin",
+              "abstained": true,
+              "affirmable": false,
+              "provenance_state": null,
+              "n_fragments": null,
+              "n_qualified": null
+            },
+            {
+              "query": "efectos gastrointestinales de la metformina",
+              "topic": "metformin",
+              "abstained": true,
+              "affirmable": false,
+              "provenance_state": null,
+              "n_fragments": null,
+              "n_qualified": null
+            },
+            {
+              "query": "metformina y riesgo de acidosis lactica",
+              "topic": "metformin",
+              "abstained": true,
+              "affirmable": false,
+              "provenance_state": null,
+              "n_fragments": null,
+              "n_qualified": null
+            },
+            {
+              "query": "metformina en insuficiencia renal cronica",
+              "topic": "metformin",
+              "abstained": true,
+              "affirmable": false,
+              "provenance_state": null,
+              "n_fragments": null,
+              "n_qualified": null
+            },
+            {
+              "query": "uso de metformina en prediabetes",
+              "topic": "metformin",
+              "abstained": false,
+              "affirmable": true,
+              "provenance_state": "block",
+              "n_fragments": 8,
+              "n_qualified": 8
+            },
+            {
+              "query": "mecanismo de accion de la metformina",
+              "topic": "metformin",
+              "abstained": true,
+              "affirmable": false,
+              "provenance_state": null,
+              "n_fragments": null,
+              "n_qualified": null
+            },
+            {
+              "query": "inhibidores SGLT2 y proteccion renal",
+              "topic": "sglt2",
+              "error": "ENDPOINT_UNREACHABLE: ReadTimeout"
+            },
+            {
+              "query": "iSGLT2 en insuficiencia cardiaca",
+              "topic": "sglt2",
+              "abstained": true,
+              "affirmable": false,
+              "provenance_state": null,
+              "n_fragments": null,
+              "n_qualified": null
+            },
+            {
+              "query": "empagliflozina y riesgo cardiovascular",
+              "topic": "sglt2",
+              "abstained": true,
+              "affirmable": false,
+              "provenance_state": null,
+              "n_fragments": null,
+              "n_qualified": null
+            },
+            {
+              "query": "dapagliflozina en enfermedad renal cronica",
+              "topic": "sglt2",
+              "abstained": false,
+              "affirmable": true,
+              "provenance_state": "block",
+              "n_fragments": 2,
+              "n_qualified": 2
+            },
+            {
+              "query": "inhibidores de SGLT2 y cetoacidosis",
+              "topic": "sglt2",
+              "abstained": true,
+              "affirmable": false,
+              "provenance_state": null,
+              "n_fragments": null,
+              "n_qualified": null
+            },
+            {
+              "query": "beneficios cardiovasculares de los iSGLT2",
+              "topic": "sglt2",
+              "abstained": true,
+              "affirmable": false,
+              "provenance_state": null,
+              "n_fragments": null,
+              "n_qualified": null
+            },
+            {
+              "query": "tratamiento de la insuficiencia cardiaca con fraccion reducida",
+              "topic": "heart_failure",
+              "abstained": true,
+              "affirmable": false,
+              "provenance_state": null,
+              "n_fragments": null,
+              "n_qualified": null
+            },
+            {
+              "query": "diureticos de asa en insuficiencia cardiaca",
+              "topic": "heart_failure",
+              "abstained": true,
+              "affirmable": false,
+              "provenance_state": null,
+              "n_fragments": null,
+              "n_qualified": null
+            },
+            {
+              "query": "insuficiencia cardiaca y hierro intravenoso",
+              "topic": "heart_failure",
+              "abstained": true,
+              "affirmable": false,
+              "provenance_state": null,
+              "n_fragments": null,
+              "n_qualified": null
+            },
+            {
+              "query": "betabloqueantes en insuficiencia cardiaca cronica",
+              "topic": "heart_failure",
+              "abstained": true,
+              "affirmable": false,
+              "provenance_state": null,
+              "n_fragments": null,
+              "n_qualified": null
+            },
+            {
+              "query": "hospitalizaciones por insuficiencia cardiaca",
+              "topic": "heart_failure",
+              "abstained": true,
+              "affirmable": false,
+              "provenance_state": null,
+              "n_fragments": null,
+              "n_qualified": null
+            },
+            {
+              "query": "farmacologia de la insuficiencia cardiaca",
+              "topic": "heart_failure",
+              "abstained": true,
+              "affirmable": false,
+              "provenance_state": null,
+              "n_fragments": null,
+              "n_qualified": null
+            },
+            {
+              "query": "cribado de cancer de pulmon con tomografia de baja dosis",
+              "topic": "lung_screening",
+              "abstained": true,
+              "affirmable": false,
+              "provenance_state": null,
+              "n_fragments": null,
+              "n_qualified": null
+            },
+            {
+              "query": "nodulos pulmonares en el cribado",
+              "topic": "lung_screening",
+              "abstained": true,
+              "affirmable": false,
+              "provenance_state": null,
+              "n_fragments": null,
+              "n_qualified": null
+            },
+            {
+              "query": "tabaquismo y deteccion precoz de cancer de pulmon",
+              "topic": "lung_screening",
+              "abstained": false,
+              "affirmable": true,
+              "provenance_state": "block",
+              "n_fragments": 1,
+              "n_qualified": 1
+            },
+            {
+              "query": "efectividad del screening pulmonar",
+              "topic": "lung_screening",
+              "abstained": true,
+              "affirmable": false,
+              "provenance_state": null,
+              "n_fragments": null,
+              "n_qualified": null
+            },
+            {
+              "query": "criterios de elegibilidad para cribado pulmonar",
+              "topic": "lung_screening",
+              "abstained": true,
+              "affirmable": false,
+              "provenance_state": null,
+              "n_fragments": null,
+              "n_qualified": null
+            },
+            {
+              "query": "radiografia frente a TAC en deteccion de cancer de pulmon",
+              "topic": "lung_screening",
+              "abstained": true,
+              "affirmable": false,
+              "provenance_state": null,
+              "n_fragments": null,
+              "n_qualified": null
+            }
+          ],
+          "duration_s": 1311.8
+        },
+        "rate": 1.0
       }
     },
     "G4": {

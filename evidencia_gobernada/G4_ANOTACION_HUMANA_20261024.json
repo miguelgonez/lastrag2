@@ -1,0 +1,36 @@
+{
+ "gate": "G4",
+ "version": "20261024 (verificador corregido e21c1e4: frases-plantilla ya son META)",
+ "fuente": "bench/results/falsos_bloqueos_wave1_20261024.json",
+ "instruccion": "Marca cada frase retirada: RESPALDADA (falso bloqueo) o NO_RESPALDADA (retirada correcta) y pon tu nombre en anotador. El campo arbitro_ALIA_consultivo NO vale como anotador (annotator_required=humano).",
+ "metricas_para_el_recibo": {
+  "queries": 24,
+  "supported_claims": 7,
+  "redacted_legitimate": null,
+  "annotator": null
+ },
+ "formula": "rate = redacted_legitimate / supported_claims <= 0.2",
+ "frases": [
+  {
+   "query": "empagliflozina y riesgo cardiovascular",
+   "claim": "La evidencia disponible se centra en la combinación de GLP‑1RAs con SGLT2 inhibidores y en los mecanismos de acción de los SGLT2 inhibidores, pero no incluye da",
+   "metodo_verificador": "lexical",
+   "arbitro_ALIA_consultivo": "B",
+   "veredicto_humano": null
+  },
+  {
+   "query": "empagliflozina y riesgo cardiovascular",
+   "claim": "Por lo tanto, la respuesta se basa en la ausencia de evidencia en los documentos indexados.",
+   "metodo_verificador": "lexical",
+   "arbitro_ALIA_consultivo": "B",
+   "veredicto_humano": null
+  },
+  {
+   "query": "dapagliflozina en enfermedad renal cronica",
+   "claim": "La evidencia disponible se centra en la protección renal y cardiovascular, no en la litogénesis.",
+   "metodo_verificador": "lexical",
+   "arbitro_ALIA_consultivo": "A",
+   "veredicto_humano": null
+  }
+ ]
+}

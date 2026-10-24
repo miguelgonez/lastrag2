@@ -345,3 +345,33 @@ provisional «revisable con datos»).
 - Con el gate (2) del arquitecto (fugas 0 ✓ ya medido) y (a) cerrado, las
   puertas de producción definidas quedan: curación ejecutada ✓ (puerta b,
   23-oct) · falsos bloqueos Wave 1 ✓ (esta) — I1 sobre v2.1.x habilitada.
+
+## Loop NH-EG-LOOP-001 · Ciclo 3 (24-oct): **G3 afirmabilidad PASS** — `affirmable=true` existe por primera vez
+
+Paquete C-G3 ejecutado según `LOOP_CAMBIOS_ZCODE.md`: la causa raíz era que la
+cita resolvía al TÍTULO y perdía el `document_id` (`pubmed_<pmid>`) mientras
+el source_meta curado va por PMID — ninguna clave casaba. Wiring aditivo
+(`a43362a`): `Citation.document_id` (Cypher lo devuelve, navigator lo copia),
+`lookup()` con equivalencia `pubmed_X ≡ pmid:X ≡ X`, `SourceMetaStore`
+(Mapping con sello sha256). Suite **191 pass / 3 skip** (suelo sube); 9
+pruebas nuevas incl. PMID retractado REAL (33245682) como caso bloqueado.
+
+**Recibo G3** (`receipts/G3_afirmabilidad.json`, produce_G3 en ventana ALIA,
+24 consultas congeladas, 5 capas, juez real, source_meta cableado):
+**answered 3 · abstained 20 · affirmable 3** (8/8, 2/2 y 1/1 fragmentos
+cualificados) · 1 error transitorio de endpoint. Bajo el plan sellado v1.0.0
+(sin `answered_min`), rate = 3/3 = 100% ≥ 90% → **PASS**. ⚠️ La debilidad
+prevista por el validador se materializó: solo 3 respuestas sostienen el
+gate. **Decisión PI pendiente: PLAN v1.1.0 con `answered_min: 12`** — el
+recibo declara `answered` para juzgar.
+
+**C-G4 re-medido con el verificador corregido** (`e21c1e4`: frases-plantilla
+y ausencias declaradas = META): las retiradas caen de 10 → **3 reales**
+(las 7 plantillas ya no cuentan — el fix funciona). Árbitro ALIA consultivo:
+1 falso bloqueo / 3 = 33% > 20%, pero **G4 exige anotador humano**: paquete
+`G4_ANOTACION_HUMANA_20261024.json` (3 frases, veredicto nulo) entregado al
+PI. El resultado del 23-oct queda renombrado `…_20261023_pre_fix.json`
+(denominador del defecto, no vale).
+
+Estado del loop: **4/13 PASS · 0 FAIL · 9 UNKNOWN**. Siguiente acción: **G4**
+(bloqueada en anotación humana del PI).

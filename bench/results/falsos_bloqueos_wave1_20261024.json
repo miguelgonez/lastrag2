@@ -1,0 +1,266 @@
+{
+ "run_date": "2026-10-23",
+ "prereg": "bench/PREREG_FALSOS_BLOQUEOS_WAVE1.md",
+ "gate": 0.2,
+ "judge": "alia-nexthealth :8024 (ventana 4096)",
+ "verdict_counts": {
+  "SUPPORTED": 7,
+  "META": 7,
+  "CONTRADICTED": 1,
+  "UNSUPPORTED": 3
+ },
+ "adjudications": {
+  "A": 1,
+  "B": 2,
+  "C": 0,
+  "UNPARSEABLE": 0
+ },
+ "tasa_falsos_bloqueos_adjudicables": 0.3333,
+ "retiradas_sobre_total_claims": 0.2727,
+ "gate_result": "FAIL",
+ "n_queries": 24,
+ "n_errors": 1,
+ "duration_s": 1339.6,
+ "per_query": [
+  {
+   "topic": "metformin",
+   "query": "dosis de metformina en diabetes tipo 2",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "metformin",
+   "query": "efectos gastrointestinales de la metformina",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "metformin",
+   "query": "metformina y riesgo de acidosis lactica",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "metformin",
+   "query": "metformina en insuficiencia renal cronica",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "metformin",
+   "query": "uso de metformina en prediabetes",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "metformin",
+   "query": "mecanismo de accion de la metformina",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "sglt2",
+   "query": "inhibidores SGLT2 y proteccion renal",
+   "error": "ENDPOINT_UNREACHABLE: ReadTimeout"
+  },
+  {
+   "topic": "sglt2",
+   "query": "iSGLT2 en insuficiencia cardiaca",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "sglt2",
+   "query": "empagliflozina y riesgo cardiovascular",
+   "abstained": false,
+   "affirmable": false,
+   "n_claims": 4,
+   "verdicts": {
+    "META": 2,
+    "UNSUPPORTED": 2
+   },
+   "adjudications": [
+    {
+     "claim": "La evidencia disponible se centra en la combinación de GLP‑1RAs con SGLT2 inhibidores y en los mecanismos de acción de los SGLT2 inhibidores, pero no incluye da",
+     "method": "lexical",
+     "arbiter": "B"
+    },
+    {
+     "claim": "Por lo tanto, la respuesta se basa en la ausencia de evidencia en los documentos indexados.",
+     "method": "lexical",
+     "arbiter": "B"
+    }
+   ]
+  },
+  {
+   "topic": "sglt2",
+   "query": "dapagliflozina en enfermedad renal cronica",
+   "abstained": false,
+   "affirmable": false,
+   "n_claims": 10,
+   "verdicts": {
+    "SUPPORTED": 6,
+    "META": 3,
+    "UNSUPPORTED": 1
+   },
+   "adjudications": [
+    {
+     "claim": "La evidencia disponible se centra en la protección renal y cardiovascular, no en la litogénesis.",
+     "method": "lexical",
+     "arbiter": "A"
+    }
+   ]
+  },
+  {
+   "topic": "sglt2",
+   "query": "inhibidores de SGLT2 y cetoacidosis",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "sglt2",
+   "query": "beneficios cardiovasculares de los iSGLT2",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "heart_failure",
+   "query": "tratamiento de la insuficiencia cardiaca con fraccion reducida",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "heart_failure",
+   "query": "diureticos de asa en insuficiencia cardiaca",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "heart_failure",
+   "query": "insuficiencia cardiaca y hierro intravenoso",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "heart_failure",
+   "query": "betabloqueantes en insuficiencia cardiaca cronica",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "heart_failure",
+   "query": "hospitalizaciones por insuficiencia cardiaca",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "heart_failure",
+   "query": "farmacologia de la insuficiencia cardiaca",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "lung_screening",
+   "query": "cribado de cancer de pulmon con tomografia de baja dosis",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "lung_screening",
+   "query": "nodulos pulmonares en el cribado",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "lung_screening",
+   "query": "tabaquismo y deteccion precoz de cancer de pulmon",
+   "abstained": false,
+   "affirmable": false,
+   "n_claims": 4,
+   "verdicts": {
+    "META": 2,
+    "SUPPORTED": 1,
+    "CONTRADICTED": 1
+   },
+   "adjudications": []
+  },
+  {
+   "topic": "lung_screening",
+   "query": "efectividad del screening pulmonar",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "lung_screening",
+   "query": "criterios de elegibilidad para cribado pulmonar",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  },
+  {
+   "topic": "lung_screening",
+   "query": "radiografia frente a TAC en deteccion de cancer de pulmon",
+   "abstained": true,
+   "affirmable": false,
+   "n_claims": 0,
+   "verdicts": {},
+   "adjudications": []
+  }
+ ]
+}
