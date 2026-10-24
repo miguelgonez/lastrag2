@@ -1,9 +1,9 @@
-# SCORECARD evidencia gobernada — 2026-10-24T00:32:01 (rc=75)
+# SCORECARD evidencia gobernada — 2026-10-24T09:25:09 (rc=75)
 Plan sellado: `b53e7822715be41c…`
 
 | puerta | nombre | estado | detalle |
 |---|---|---|---|
-| G0 | integridad_suite | PASS | {'summary': '179 passed, 3 skipped in 28.33s'} |
+| G0 | integridad_suite | PASS | {'summary': '182 passed, 3 skipped in 21.90s'} |
 | G1 | fugas_cero | PASS | {'lexical': {'fugas': 0, 'falsos_bloqueos': 2, 'exact': 12, 'n': 14}, 'judge': {'fugas': 0, 'falsos_bloqueos': 2, 'methods': {'semantic': 'applied', 'judge': 'applied'}, 'measured_at': '2026-10-23T22:24:15+00:00'}} |
 | G2 | curacion_ejecutada | PASS | {'coverage': 1.0} |
 | G3 | afirmabilidad | UNKNOWN | sin recibo G3_afirmabilidad.json |

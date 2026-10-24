@@ -1,6 +1,6 @@
 {
  "gate": "G2",
- "measured_at": "2026-10-23T23:17:26",
+ "measured_at": "2026-10-24T09:24:44",
  "by": "zcode@MBP",
  "inputs_sha256": {
   "sweep_receipt": "0ef9118b5f0f05135525841ff240b989cf4fb1cd1f0bf1d781f61fa5fbda944e",
@@ -14,7 +14,7 @@
   "unknown": 0,
   "retracted": 84,
   "concern": 0,
-  "max_check_age_days": 0,
+  "max_check_age_days": 1,
   "sources": [
    "pubmed",
    "rwdb"

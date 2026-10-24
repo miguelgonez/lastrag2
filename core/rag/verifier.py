@@ -83,7 +83,31 @@ _META_OPENERS = (
     "es importante", "lo siento", "no puedo responder", "soy un asistente",
     "consulta a un profesional", "consulte a su medico", "consulte con su medico",
 )
-_SKIP_MARKS = ("⛔", "「", "⚠️", "###", "## ", "# ", "```", "|")
+_SKIP_MARKS = ("⛔", "「", "⚠️", "ℹ️", "###", "## ", "# ", "```", "|")
+# Texto CANONICO del propio motor (abstenciones, retenciones, marcas, footers).
+# Hallazgo Wave 1 (23-oct): tras partir en frases, la 2a y 3a frase de la
+# abstencion ya no empiezan por ⛔ y se verificaban como claims => el motor
+# retiraba su propia abstencion. Un texto del sistema nunca es una afirmacion.
+_SYSTEM_TEXT_MARKS = (
+    "abstencion (grado medico)", "respuesta retenida", "no dispongo de evidencia suficiente",
+    "este sistema no responde desde conocimiento general", "sin evidencia verificable, lo dice",
+    "afirmacion retirada", "cita retirada", "verificacion claim", "control de anclaje",
+    "control de evidencia", "no como afirmacion de grado medico",
+    "no se entrega una afirmacion", "consulta los fragmentos citados",
+    "no se afirma lo que no remite",
+)
+# Declaraciones de AUSENCIA: hablan de la evidencia, no del mundo. No se
+# pueden anclar (afirman que algo falta) y retirarlas seria castigar la
+# honestidad del modelo. Cuentan como META y se contabilizan aparte.
+_ABSENCE_OPENERS = (
+    "no se ha proporcionado", "no se han proporcionado", "no se ha encontrado evidencia",
+    "no se han encontrado", "no se encontro evidencia", "no se encontraron",
+    "no hay evidencia", "no existe evidencia", "no consta", "no dispongo",
+    "no se dispone", "la evidencia proporcionada no", "la evidencia disponible no",
+    "los fragmentos no", "los documentos no", "sin evidencia", "no puedo responder",
+    "no es posible responder", "no se ha proporcionado ninguna",
+)
+_BOLD_LABEL = re.compile(r"^\s*\*\*[^*]{1,40}\*\*\s*:?\s*")   # «**Respuesta final:** …»
 _CITATION_LINE = re.compile(r"^\s*[-•*]?\s*[^:]{2,80}\s·\s.+$")  # "Guia · 3.2 · p.43"
 _MIN_CONTENT_TERMS = 3
 
@@ -130,6 +154,19 @@ def _letter(decision: str) -> str:
     return cleaned[:1] if cleaned[:1] in ("A", "B", "C") else ""
 
 
+def is_absence_declaration(sentence: str) -> bool:
+    """«No se ha encontrado evidencia sobre X»: el modelo declara un vacio.
+    No es una afirmacion sobre el mundo y no se ancla; es META."""
+    norm = _norm(_BOLD_LABEL.sub("", sentence.strip()))
+    return any(norm.startswith(o) for o in _ABSENCE_OPENERS)
+
+
+def is_system_text(sentence: str) -> bool:
+    """Texto canonico del motor (abstencion, retencion, marcas, footers)."""
+    norm = _norm(sentence)
+    return any(m in norm for m in _SYSTEM_TEXT_MARKS)
+
+
 def is_meta(sentence: str) -> bool:
     """Frases que no afirman nada verificable: no cuentan ni se retiran."""
     raw = sentence.strip()
@@ -139,10 +176,13 @@ def is_meta(sentence: str) -> bool:
         return True
     if _CITATION_LINE.match(raw) and "·" in raw:
         return True
-    norm = _norm(raw)
+    if is_system_text(raw) or is_absence_declaration(raw):
+        return True
+    body = _BOLD_LABEL.sub("", raw)
+    norm = _norm(body)
     if any(norm.startswith(o) or o in norm for o in _META_OPENERS):
         return True
-    return len(content_terms(raw)) < _MIN_CONTENT_TERMS
+    return len(content_terms(body)) < _MIN_CONTENT_TERMS
 
 
 # ── Modelo de datos ──────────────────────────────────────────────────────
@@ -223,6 +263,7 @@ class VerificationReport:
             "unsupported": len(self.unsupported),
             "contradicted": len(self.contradicted),
             "meta": len(self._by(META)),
+            "absence_declared": sum(1 for c in self.claims if c.method == "absence_declared"),
             "supported_ratio": round(self.supported_ratio, 3),
             "claims": [c.to_dict() for c in self.claims][:24],
         }
@@ -353,7 +394,9 @@ class ClaimVerifier:
 
         for sentence in split_sentences(answer):
             if is_meta(sentence):
-                report.claims.append(ClaimVerdict(sentence, META, method="meta"))
+                kind = ("absence_declared" if is_absence_declaration(sentence)
+                        else "system_text" if is_system_text(sentence) else "meta")
+                report.claims.append(ClaimVerdict(sentence, META, method=kind))
                 continue
             claim_terms = content_terms(sentence)
             lex, frag, ev_sentence = self._lexical(claim_terms, prepared)

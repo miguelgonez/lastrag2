@@ -1,4 +1,4 @@
-=== Loop evidencia gobernada · 2026-10-24T00:31:30 ===
+=== Loop evidencia gobernada · 2026-10-24T09:24:44 ===
 ✅ G0   integridad_suite       PASS     
 ✅ G1   fugas_cero             PASS     
 ✅ G2   curacion_ejecutada     PASS     

@@ -387,3 +387,46 @@ def test_redact_deja_marca_y_cuenta():
     texto, n = redact("La metformina es el tratamiento de primera línea en la diabetes tipo 2. "
                       "Cura la diabetes en tres semanas en todos los casos.", rep)
     assert n == 1 and REDACTION_MARK in texto and "tres semanas" not in texto
+
+
+# ============================================================
+# 6 · Hallazgo Wave 1 (23-oct): texto del sistema y ausencias declaradas son META
+# ============================================================
+
+FRASES_REALES_WAVE1_META = [
+    "No se ha proporcionado ninguna citación relevante para la pregunta.",
+    "**Respuesta final:** No se ha encontrado evidencia que relacione el uso de metformina con la prevención o el manejo de la prediabetes en la práctica clínica.",
+    "**Abstención (grado médico).** No dispongo de evidencia suficiente en los documentos indexados para responder a esta consulta con garantías.",
+    "Este sistema no responde desde conocimiento general:",
+    "sin evidencia verificable, lo dice.",
+    "No se ha proporcionado evidencia sobre la eficacia de la dapagliflozina en la prevención de la formación de cálculos renales;",
+]
+
+
+def test_texto_del_sistema_y_ausencias_declaradas_no_se_retiran():
+    """8 de las 10 'retiradas' de Wave 1 eran la propia abstención del motor o
+    declaraciones de ausencia: retirarlas mutilaba la respuesta e inflaba la
+    tasa de retiradas. Ninguna es una afirmación sobre el mundo."""
+    for frase in FRASES_REALES_WAVE1_META:
+        assert is_meta(frase), frase
+    # y el único claim real del paquete sigue siendo un claim
+    assert not is_meta("la evidencia disponible se centra en la protección renal y cardiovascular.")
+
+
+def test_informe_distingue_ausencias_declaradas_de_claims():
+    rep = _verify("No se ha encontrado evidencia sobre la dapagliflozina en cálculos renales. "
+                  "La metformina es el tratamiento de primera línea en la diabetes tipo 2.")
+    assert [c.verdict for c in rep.claims] == [META, SUPPORTED]
+    assert rep.claims[0].method == "absence_declared"
+    assert rep.to_dict()["absence_declared"] == 1
+    assert rep.state == "supported"
+
+
+def test_motor_no_mutila_su_propia_abstencion_echo_parcial():
+    """El modelo repite la abstención canónica sin el encabezado ⛔ y añade un
+    claim respaldado: nada de lo canónico se retira."""
+    out = _run("No dispongo de evidencia suficiente en los documentos indexados para responder a esta consulta con garantías. "
+               "Este sistema no responde desde conocimiento general: sin evidencia verificable, lo dice. "
+               "La metformina es el tratamiento de primera línea en la diabetes tipo 2.")
+    assert REDACTION_MARK not in out["response"]
+    assert out["features"]["verification"]["state"] == "supported"

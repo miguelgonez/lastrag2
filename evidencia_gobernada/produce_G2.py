@@ -61,7 +61,9 @@ def main() -> int:
             "retracted": r["final_counts"].get("retracted"),
             "concern": r["final_counts"].get("concern"),
             "max_check_age_days": max_age,
-            "sources": ["pubmed", "rwdb"],
+            # derivadas del source_meta (p. ej. "pubmed+rwdb" -> {pubmed, rwdb}), no tecleadas
+            "sources": sorted({part for v in source_meta.values()
+                               for part in str(v.get("retraction_source") or "").split("+") if part}),
             "source_meta_path": str(metas[-1]),
             "sweep_run_date": r.get("run_date"),
         },
